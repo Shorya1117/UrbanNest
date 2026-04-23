@@ -159,10 +159,7 @@ const verifyOTP = async (req, res, next) => {
 
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) return errorResponse(res, 404, "User not found.");
-
-    user.lastLogin = new Date();
-    await user.save();
-
+    await User.findByIdAndUpdate(user._id, { lastLogin: new Date() });
     const token = generateToken(user._id, user.role);
 
     return successResponse(res, 200, "Login successful.", {

@@ -77,9 +77,13 @@ userSchema.index({ societyId: 1, role: 1 });
 userSchema.index({ societyId: 1, flatId: 1 });
 
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password") || !this.password) return next();
-  this.password = await bcrypt.hash(this.password, 12);
-  next();
+  try {
+    if (!this.isModified("password") || !this.password) return next();
+    this.password = await bcrypt.hash(this.password, 12);
+    next();
+  } catch (err) {
+    next(err);
+  }
 });
 
 userSchema.methods.comparePassword = async function (candidatePassword) {
