@@ -29,7 +29,7 @@ export default function ChangePassword() {
     try {
       await authAPI.changePassword({ currentPassword: form.currentPassword, newPassword: form.newPassword });
       toast.success("Password changed! Please log in again.");
-      navigate("/admin/login");
+      navigate("/login");
     } catch (err) {
       setErrors({ general: err.response?.data?.message || "Failed to change password." });
     } finally {

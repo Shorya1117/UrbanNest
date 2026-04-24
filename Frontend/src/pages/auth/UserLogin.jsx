@@ -1,16 +1,19 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Mail, KeyRound, ArrowRight, RefreshCw } from "lucide-react";
+import { Building2, Mail, KeyRound, ArrowRight, RefreshCw, User, ShieldCheck } from "lucide-react";
 import toast from "react-hot-toast";
 import { authAPI } from "../../api/services";
 import { useAuth } from "../../context/AuthContext";
 import { Button, Input } from "../../components/ui";
 import logo from "../../assets/logo.jpeg";
+
 const STEPS = { EMAIL: "email", OTP: "otp" };
+const ROLES = { RESIDENT: "resident", ADMIN: "admin" };
 
 export default function UserLogin() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [role, setRole] = useState(ROLES.RESIDENT);
   const [step, setStep] = useState(STEPS.EMAIL);
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -34,6 +37,7 @@ export default function UserLogin() {
     setErrors({});
     setLoading(true);
     try {
+      // Both Resident and Admin use the same OTP send endpoint on the backend
       await authAPI.sendOTP(email.trim().toLowerCase());
       toast.success("OTP sent to your email!");
       setStep(STEPS.OTP);
@@ -53,9 +57,15 @@ export default function UserLogin() {
     try {
       const res = await authAPI.verifyOTP(email, otp.trim());
       const { token, user } = res.data.data;
+      
       login(token, user);
       toast.success(`Welcome back, ${user.name}!`);
-      navigate("/dashboard");
+
+      // Route based on user role
+      if (user.role === "SUPER_ADMIN") navigate("/superadmin");
+      else if (user.role === "ADMIN") navigate("/admin");
+      else navigate("/dashboard");
+      
     } catch (err) {
       setErrors({ otp: err.response?.data?.message || "Invalid OTP." });
     } finally {
@@ -79,98 +89,131 @@ export default function UserLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans">
       <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="flex flex-col items-center mb-6">
-          <img 
-            src={logo} 
-            alt="logo" 
-            className="w-24 h-24 object-contain mb-2"
-          />
-          <h1 className="text-2xl font-extrabold text-gray-900">UrbanNest</h1>
-          <p className="text-sm text-gray-500">Your Society, Connected.</p>
+        {/* Logo & Brand */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-20 h-20 bg-white rounded-3xl shadow-xl shadow-blue-500/10 flex items-center justify-center mb-4 p-2">
+            <img src={logo} alt="UrbanNest" className="w-full h-full object-contain" />
+          </div>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">UrbanNest</h1>
+          <p className="text-gray-500 text-sm mt-1">Intelligent Society Management</p>
         </div>
-        <div className="card">
-          {/* Step indicator */}
-          <div className="flex items-center gap-2 mb-6">
-            <div className={`flex-1 h-1.5 rounded-full ${step === STEPS.EMAIL || step === STEPS.OTP ? "bg-primary" : "bg-gray-200"}`} />
-            <div className={`flex-1 h-1.5 rounded-full ${step === STEPS.OTP ? "bg-primary" : "bg-gray-200"}`} />
+
+        <div className="bg-white rounded-[2rem] shadow-2xl shadow-gray-200/50 p-8 border border-gray-100">
+          {/* Role Toggle */}
+          {step === STEPS.EMAIL && (
+            <div className="flex p-1 bg-gray-100 rounded-2xl mb-8">
+              <button
+                onClick={() => setRole(ROLES.RESIDENT)}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                  role === ROLES.RESIDENT 
+                    ? "bg-white text-blue-600 shadow-sm" 
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <User size={16} /> Residence
+              </button>
+              <button
+                onClick={() => setRole(ROLES.ADMIN)}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                  role === ROLES.ADMIN 
+                    ? "bg-white text-blue-600 shadow-sm" 
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <ShieldCheck size={16} /> Society Admin
+              </button>
+            </div>
+          )}
+
+          {/* Form Header */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-900">
+              {step === STEPS.EMAIL 
+                ? (role === ROLES.RESIDENT ? "Welcome Home" : "Admin Portal")
+                : "Verify Identity"}
+            </h2>
+            <p className="text-gray-500 text-sm mt-1">
+              {step === STEPS.EMAIL 
+                ? "Enter your registered email to continue"
+                : `We've sent a code to ${email}`}
+            </p>
           </div>
 
           {step === STEPS.EMAIL ? (
-            <>
-              <div className="mb-6">
-                <h2 className="text-xl font-extrabold text-gray-900">Resident Login</h2>
-                <p className="text-sm text-gray-500 mt-1">Enter your registered email to receive an OTP.</p>
-              </div>
-              <form onSubmit={handleSendOTP} className="space-y-5">
-                <Input
-                  label="Email Address"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  error={errors.email}
-                  autoFocus
-                />
-                <Button type="submit" loading={loading} className="w-full" size="lg">
-                  Send OTP <ArrowRight size={16} />
-                </Button>
-              </form>
-              <p className="text-center text-sm text-gray-500 mt-5">
-                Admin?{" "}
-                <a href="/admin/login" className="text-primary font-semibold hover:underline">Login here</a>
-              </p>
-            </>
-          ) : (
-            <>
-              <div className="mb-6">
-                <h2 className="text-xl font-extrabold text-gray-900">Enter OTP</h2>
-                <p className="text-sm text-gray-500 mt-1">
-                  We sent a 6-digit code to <span className="font-semibold text-gray-700">{email}</span>
-                </p>
-              </div>
-              <form onSubmit={handleVerifyOTP} className="space-y-5">
-                <div>
-                  <label className="label">One-Time Password</label>
+            <form onSubmit={handleSendOTP} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Email Address</label>
+                <div className="relative group">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={18} />
                   <input
-                    className={`input text-center text-2xl font-extrabold tracking-[0.5em] ${errors.otp ? "border-red-400 focus:ring-red-200" : ""}`}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    placeholder="● ● ● ● ● ●"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                    type="email"
+                    placeholder="name@example.com"
+                    className={`w-full pl-12 pr-4 py-4 bg-gray-50 border-2 rounded-2xl outline-none transition-all ${
+                      errors.email ? "border-red-100 bg-red-50" : "border-transparent focus:border-blue-500/20 focus:bg-white"
+                    }`}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     autoFocus
                   />
-                  {errors.otp && <p className="text-xs text-red-500 mt-1">{errors.otp}</p>}
                 </div>
+                {errors.email && <p className="text-xs text-red-500 font-medium ml-1">{errors.email}</p>}
+              </div>
 
-                <Button type="submit" loading={loading} className="w-full" size="lg">
-                  Verify & Login <ArrowRight size={16} />
-                </Button>
-              </form>
+              <Button type="submit" loading={loading} className="w-full py-4 rounded-2xl text-lg shadow-lg shadow-blue-500/20" size="lg">
+                Continue <ArrowRight size={20} className="ml-2" />
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOTP} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 text-center block">6-Digit OTP</label>
+                <input
+                  className={`w-full text-center text-4xl font-black tracking-[0.5em] py-5 bg-gray-50 border-2 rounded-2xl outline-none transition-all ${
+                    errors.otp ? "border-red-100 bg-red-50" : "border-transparent focus:border-blue-500/20 focus:bg-white"
+                  }`}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="000000"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                  autoFocus
+                />
+                {errors.otp && <p className="text-xs text-red-500 font-medium text-center">{errors.otp}</p>}
+              </div>
 
-              <div className="flex items-center justify-between mt-4">
+              <Button type="submit" loading={loading} className="w-full py-4 rounded-2xl text-lg shadow-lg shadow-blue-500/20" size="lg">
+                Verify & Login <ArrowRight size={20} className="ml-2" />
+              </Button>
+
+              <div className="flex items-center justify-between px-1">
                 <button
+                  type="button"
                   onClick={() => { setStep(STEPS.EMAIL); setOtp(""); setErrors({}); }}
-                  className="text-sm text-gray-500 hover:text-gray-700 font-semibold"
+                  className="text-sm text-gray-400 hover:text-gray-600 font-bold transition-colors"
                 >
-                  ← Change Email
+                  Change Email
                 </button>
                 <button
+                  type="button"
                   onClick={handleResend}
                   disabled={timer > 0}
-                  className="flex items-center gap-1 text-sm font-semibold text-primary disabled:text-gray-400 hover:underline"
+                  className="flex items-center gap-1.5 text-sm font-bold text-blue-600 disabled:text-gray-300 transition-colors"
                 >
-                  <RefreshCw size={13} />
+                  <RefreshCw size={14} className={timer > 0 ? "" : "animate-spin-slow"} />
                   {timer > 0 ? `Resend in ${timer}s` : "Resend OTP"}
                 </button>
               </div>
-            </>
+            </form>
           )}
         </div>
+
+        {/* Footer */}
+        <p className="text-center text-gray-400 text-sm mt-8">
+          By logging in, you agree to our <span className="text-gray-600 font-bold cursor-pointer">Terms</span> & <span className="text-gray-600 font-bold cursor-pointer">Privacy</span>
+        </p>
       </div>
     </div>
   );

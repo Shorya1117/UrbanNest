@@ -5,7 +5,7 @@ const { deleteImage } = require("../config/cloudinary");
 // ─── Create Complaint ─────────────────────────────────────────────────────────
 const createComplaint = async (req, res, next) => {
   try {
-    const { title, description } = req.body;
+    const { title, description, category, priority, flatNo, block } = req.body;
     if (!title || !description)
       return errorResponse(res, 400, "title and description are required.");
 
@@ -18,6 +18,10 @@ const createComplaint = async (req, res, next) => {
     const complaint = await Complaint.create({
       title,
       description,
+      category: category || "other",
+      priority: priority || "medium",
+      flatNo: flatNo || null,
+      block: block || null,
       images,
       createdBy: req.user._id,
       societyId: req.societyId,

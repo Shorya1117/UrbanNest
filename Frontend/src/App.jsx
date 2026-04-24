@@ -74,7 +74,7 @@ export default function App() {
           {/* Public */}
           <Route path="/"            element={<Navigate to="/login" replace />} />
           <Route path="/login"       element={<UserLogin />} />
-          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/login" element={<UserLogin />} />
           <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
 
           {/* SuperAdmin */}
