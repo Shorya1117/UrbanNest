@@ -75,6 +75,12 @@ const adminLogin = async (req, res, next) => {
       role: "ADMIN",
     }).select("+password");
 
+    // TEMP DEBUG — remove after fix
+    console.log("Admin found:", admin ? "YES" : "NO");
+    console.log("Admin isApproved:", admin?.isApproved);
+    console.log("Password field exists:", !!admin?.password);
+    console.log("Password starts with $2b$:", admin?.password?.startsWith("$2b$"));
+
     if (!admin || !(await admin.comparePassword(password)))
       return errorResponse(res, 401, "Invalid credentials.");
 
@@ -192,7 +198,8 @@ const changePassword = async (req, res, next) => {
 
     const isMatch = await user.comparePassword(currentPassword);
     if (!isMatch) return errorResponse(res, 401, "Current password is incorrect.");
-
+    console.log("Changing password for user ID:", req.user._id);
+    console.log("User email:", user.email);
     user.password = newPassword;
     user.mustChangePassword = false;
     await user.save();
