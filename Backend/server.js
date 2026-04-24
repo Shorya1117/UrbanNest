@@ -47,14 +47,16 @@ connectDB();
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  max: process.env.NODE_ENV === "development" ? 5000 : 500,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: "Too many requests, please try again later." },
+  skip: (req) => req.path.includes("/notifications"), // skip polling route
 });
+
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30,
+  max: process.env.NODE_ENV === "development" ? 500 : 30,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: "Too many auth attempts, please try again later." },

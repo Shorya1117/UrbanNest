@@ -57,7 +57,7 @@ const userSchema = new mongoose.Schema(
     },
     avatar: {
       url: { type: String, trim: true, default: null },
-      publicId: { type: String, trim: true, default: null }, // Cloudinary public_id for deletion
+      publicId: { type: String, trim: true, default: null },
     },
     mustChangePassword: {
       type: Boolean,
@@ -71,21 +71,21 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Enforce unique email per society
+// Indexes
 userSchema.index({ email: 1, societyId: 1 }, { unique: true });
 userSchema.index({ societyId: 1, role: 1 });
 userSchema.index({ societyId: 1, flatId: 1 });
 
-userSchema.pre("save", async function (next) {
-  try {
-    if (!this.isModified("password") || !this.password) return next();
-    this.password = await bcrypt.hash(this.password, 12);
-    next();
-  } catch (err) {
-    next(err);
-  }
+
+// ✅ FIXED middleware (NO next, NO try-catch needed)
+userSchema.pre("save", async function () {
+  if (!this.isModified("password") || !this.password) return;
+
+  this.password = await bcrypt.hash(this.password, 12);
 });
 
+
+// Compare password
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
