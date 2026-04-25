@@ -5,13 +5,14 @@ import { Avatar } from "../ui";
 import NotificationBell from "../shared/NotificationBell";
 import {
   Home, Users, ShoppingBag, Wrench, MessageSquare,
-  Bell, LogOut, Building2, Menu, X, Tag, FileSpreadsheet,
+  Bell, LogOut, Building2, Menu, X, Tag, FileSpreadsheet, CalendarCheck,
 } from "lucide-react";
 
 const NAV_USER = [
   { to: "/dashboard",     icon: Home,          label: "Dashboard" },
   { to: "/marketplace",   icon: ShoppingBag,   label: "Marketplace" },
   { to: "/services",      icon: Wrench,        label: "Services" },
+  { to: "/bookings",      icon: CalendarCheck, label: "My Bookings" },
   { to: "/complaints",    icon: MessageSquare, label: "Complaints" },
   { to: "/notifications", icon: Bell,          label: "Notifications" },
 ];
@@ -24,6 +25,7 @@ const NAV_ADMIN = [
   { to: "/admin/categories",    icon: Tag,             label: "Categories" },
   { to: "/admin/complaints",    icon: MessageSquare,   label: "Complaints" },
   { to: "/admin/services",      icon: Wrench,          label: "Services" },
+  { to: "/admin/bookings",      icon: CalendarCheck,   label: "Bookings" },
   { to: "/admin/notifications", icon: Bell,            label: "Notifications" },
 ];
 

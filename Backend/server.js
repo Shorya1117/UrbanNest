@@ -30,6 +30,7 @@ const serviceRoutes      = require("./routes/service.routes");
 const reviewRoutes       = require("./routes/review.routes");
 const notificationRoutes = require("./routes/notification.routes");
 const excelRoutes        = require("./routes/excel.routes");
+const bookingRoutes      = require("./routes/booking.routes");
 const dns = require("dns");
 
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
@@ -85,6 +86,7 @@ app.use("/api/services",      serviceRoutes);
 app.use("/api/reviews",       reviewRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/excel",         excelRoutes);
+app.use("/api/bookings",      bookingRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

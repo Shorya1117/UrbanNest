@@ -11,6 +11,7 @@ const Review = require("./Review");
 const Category = require("./Category");
 const Notification = require("./Notification");
 const OTP = require("./OTP");
+const Booking = require("./Booking");
 
 module.exports = {
   SuperAdmin,
@@ -24,4 +25,5 @@ module.exports = {
   Category,
   Notification,
   OTP,
+  Booking,
 };

@@ -18,6 +18,7 @@ import Marketplace   from "./pages/user/Marketplace";
 import ListingDetail from "./pages/user/ListingDetail";
 import Complaints    from "./pages/user/Complaints";
 import Services      from "./pages/user/Services";
+import Bookings      from "./pages/user/Bookings";
 import Notifications from "./pages/user/Notifications";
 
 // Admin
@@ -27,6 +28,7 @@ import AdminFlats         from "./pages/admin/AdminFlats";
 import AdminCategories    from "./pages/admin/AdminCategories";
 import AdminComplaints    from "./pages/admin/AdminComplaints";
 import AdminServices      from "./pages/admin/AdminServices";
+import AdminBookings      from "./pages/admin/AdminBookings";
 import AdminNotifications from "./pages/admin/AdminNotifications";
 import AdminExcelImport   from "./pages/admin/AdminExcelImport";
 
@@ -74,7 +76,7 @@ export default function App() {
           {/* Public */}
           <Route path="/"            element={<Navigate to="/login" replace />} />
           <Route path="/login"       element={<UserLogin />} />
-          <Route path="/admin/login" element={<UserLogin />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
 
           {/* SuperAdmin */}
@@ -87,6 +89,7 @@ export default function App() {
           <Route path="/marketplace/:id" element={<ProtectedRoute roles={USER_ROLES}><ListingDetail /></ProtectedRoute>} />
           <Route path="/complaints"      element={<ProtectedRoute roles={USER_ROLES}><Complaints /></ProtectedRoute>} />
           <Route path="/services"        element={<ProtectedRoute roles={USER_ROLES}><Services /></ProtectedRoute>} />
+          <Route path="/bookings"        element={<ProtectedRoute roles={USER_ROLES}><Bookings /></ProtectedRoute>} />
           <Route path="/notifications"   element={<ProtectedRoute roles={USER_ROLES}><Notifications /></ProtectedRoute>} />
 
           {/* Admin */}
@@ -96,6 +99,7 @@ export default function App() {
           <Route path="/admin/categories"        element={<ProtectedRoute roles={["ADMIN"]}><AdminCategories /></ProtectedRoute>} />
           <Route path="/admin/complaints"        element={<ProtectedRoute roles={["ADMIN"]}><AdminComplaints /></ProtectedRoute>} />
           <Route path="/admin/services"          element={<ProtectedRoute roles={["ADMIN"]}><AdminServices /></ProtectedRoute>} />
+          <Route path="/admin/bookings"          element={<ProtectedRoute roles={["ADMIN"]}><AdminBookings /></ProtectedRoute>} />
           <Route path="/admin/notifications"     element={<ProtectedRoute roles={["ADMIN"]}><AdminNotifications /></ProtectedRoute>} />
           <Route path="/admin/import"            element={<ProtectedRoute roles={["ADMIN"]}><AdminExcelImport /></ProtectedRoute>} />
 

@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback } from "react";
-import { Search, Phone, Star, Wrench } from "lucide-react";
+import { Search, Phone, Star, Wrench, CalendarCheck } from "lucide-react";
 import toast from "react-hot-toast";
-import { serviceAPI, reviewAPI } from "../../api/services";
+import { serviceAPI, reviewAPI, bookingAPI } from "../../api/services";
 import { PageLayout, PageHeader } from "../../components/layout";
-import { Spinner, EmptyState, StarRating, Avatar, Modal, Textarea, Button } from "../../components/ui";
+import { Spinner, EmptyState, StarRating, Avatar, Modal, Textarea, Button, Input, Select } from "../../components/ui";
 
+// ─── Review Modal (existing, unchanged) ──────────────────────────────────────
 function ReviewModal({ open, onClose, service }) {
   const [form, setForm] = useState({ rating: 0, comment: "" });
   const [reviews, setReviews] = useState([]);
@@ -85,7 +86,91 @@ function ReviewModal({ open, onClose, service }) {
   );
 }
 
-function ServiceCard({ service, onReview }) {
+// ─── NEW: Booking Modal ──────────────────────────────────────────────────────
+function BookingModal({ open, onClose, service }) {
+  const [form, setForm] = useState({ date: "", timeSlot: "", notes: "" });
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (open) setForm({ date: "", timeSlot: "", notes: "" });
+  }, [open]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.date || !form.timeSlot) return toast.error("Please select a date and time slot.");
+    setSubmitting(true);
+    try {
+      await bookingAPI.create({
+        serviceId: service._id,
+        date: form.date,
+        timeSlot: form.timeSlot,
+        notes: form.notes || undefined,
+      });
+      toast.success("Booking created! Check My Bookings for status.");
+      onClose();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to create booking.");
+    } finally { setSubmitting(false); }
+  };
+
+  // Min date = today
+  const today = new Date().toISOString().split("T")[0];
+
+  if (!service) return null;
+  return (
+    <Modal open={open} onClose={onClose} title={`Book — ${service.name}`}>
+      <div className="mb-5">
+        <div className="flex items-center gap-3 p-4 bg-primary-50 rounded-xl">
+          <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shrink-0 overflow-hidden">
+            {service.photo?.url
+              ? <img src={service.photo.url} alt={service.name} className="w-full h-full object-cover" />
+              : <Wrench className="w-6 h-6 text-primary" />}
+          </div>
+          <div>
+            <p className="font-bold text-gray-900">{service.name}</p>
+            <p className="text-xs text-gray-600 capitalize">{service.serviceType} • {service.phone}</p>
+          </div>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input
+          label="Date *"
+          type="date"
+          min={today}
+          value={form.date}
+          onChange={(e) => setForm({ ...form, date: e.target.value })}
+        />
+        <Select
+          label="Time Slot *"
+          value={form.timeSlot}
+          onChange={(e) => setForm({ ...form, timeSlot: e.target.value })}
+        >
+          <option value="">Select time slot</option>
+          <option value="MORNING">Morning (8 AM – 12 PM)</option>
+          <option value="AFTERNOON">Afternoon (12 PM – 5 PM)</option>
+          <option value="EVENING">Evening (5 PM – 9 PM)</option>
+        </Select>
+        <Textarea
+          label="Notes (optional)"
+          placeholder="e.g. Fix kitchen tap, need plumber for bathroom..."
+          value={form.notes}
+          rows={3}
+          onChange={(e) => setForm({ ...form, notes: e.target.value })}
+        />
+        <div className="flex gap-3 pt-2">
+          <Button type="button" variant="ghost" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button type="submit" loading={submitting} className="flex-1">
+            <CalendarCheck size={16} /> Book Now
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+// ─── Service Card (updated with Book button) ─────────────────────────────────
+function ServiceCard({ service, onReview, onBook }) {
   return (
     <div className="card hover:shadow-card-hover transition-all duration-200">
       <div className="flex items-start gap-4">
@@ -115,14 +200,20 @@ function ServiceCard({ service, onReview }) {
             )}
           </div>
         </div>
+      </div>
+      <div className="flex gap-2 mt-4 pt-3 border-t border-gray-50">
+        <Button size="sm" onClick={() => onBook(service)}>
+          <CalendarCheck size={13} /> Book
+        </Button>
         <Button size="sm" variant="secondary" onClick={() => onReview(service)}>
-          <Star size={13} /> Review
+          <Star size={13} /> Reviews
         </Button>
       </div>
     </div>
   );
 }
 
+// ─── Services Page ────────────────────────────────────────────────────────────
 export default function Services() {
   const [services, setServices] = useState([]);
   const [types, setTypes] = useState([]);
@@ -130,6 +221,7 @@ export default function Services() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [reviewTarget, setReviewTarget] = useState(null);
+  const [bookTarget, setBookTarget] = useState(null);
 
   const fetchServices = useCallback(async () => {
     setLoading(true);
@@ -164,11 +256,14 @@ export default function Services() {
         <EmptyState icon={Wrench} title="No services found" description="Your society admin hasn't added any service providers yet." />
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {services.map((s) => <ServiceCard key={s._id} service={s} onReview={setReviewTarget} />)}
+          {services.map((s) => (
+            <ServiceCard key={s._id} service={s} onReview={setReviewTarget} onBook={setBookTarget} />
+          ))}
         </div>
       )}
 
       <ReviewModal open={!!reviewTarget} onClose={() => setReviewTarget(null)} service={reviewTarget} />
+      <BookingModal open={!!bookTarget} onClose={() => setBookTarget(null)} service={bookTarget} />
     </PageLayout>
   );
 }
