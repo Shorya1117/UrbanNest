@@ -1,4 +1,4 @@
-const { Complaint, Notification } = require("../models");
+const { Complaint, Notification, User } = require("../models");
 const { successResponse, errorResponse } = require("../utils/response");
 const { deleteImage } = require("../config/cloudinary");
 
@@ -28,6 +28,20 @@ const createComplaint = async (req, res, next) => {
     });
 
     await complaint.populate("createdBy", "name avatar flatId");
+
+    // Notify society admins about the new complaint
+    const admins = await User.find({ societyId: req.societyId, role: "ADMIN" }).select("_id");
+    if (admins.length > 0) {
+      const notifications = admins.map((admin) => ({
+        userId: admin._id,
+        message: `New complaint raised: "${title}" by ${complaint.createdBy.name}.`,
+        type: "COMPLAINT_UPDATE",
+        societyId: req.societyId,
+        metadata: { complaintId: complaint._id, status: "PENDING" },
+      }));
+      await Notification.insertMany(notifications);
+    }
+
     return successResponse(res, 201, "Complaint submitted.", { complaint });
   } catch (error) {
     next(error);
