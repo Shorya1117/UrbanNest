@@ -16,9 +16,9 @@ const complaintSchema = new mongoose.Schema(
     },
     images: [
       {
-        url: { type: String, required: true, trim: true },
-        publicId: { type: String, required: true, trim: true }, // Cloudinary public_id for deletion
-        altText: { type: String, trim: true, default: null },
+        url:       { type: String, required: true, trim: true },
+        publicId:  { type: String, required: true, trim: true },
+        altText:   { type: String, trim: true, default: null },
       },
     ],
     status: {
@@ -31,9 +31,10 @@ const complaintSchema = new mongoose.Schema(
       ref: "User",
       required: [true, "Creator reference is required"],
     },
+    // assignedTo is a ServiceProvider (plumber/electrician/etc.), NOT a User
     assignedTo: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "ServiceProvider",
       default: null,
     },
     societyId: {

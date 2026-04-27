@@ -1,31 +1,30 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ShoppingBag, Wrench, MessageSquare, Bell, ArrowRight, TrendingUp } from "lucide-react";
+import { ShoppingBag, Wrench, MessageSquare, Bell, ArrowUpRight, TrendingUp, Clock } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { PageLayout, PageHeader } from "../../components/layout";
 import { Spinner, Badge, Avatar } from "../../components/ui";
 import { listingAPI, complaintAPI, notificationAPI } from "../../api/services";
 
-const StatCard = ({ icon: Icon, label, value, color, to }) => (
-  <Link to={to} className="card hover:shadow-card-hover transition-all duration-200 group">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm text-gray-500 font-semibold">{label}</p>
-        <p className="text-3xl font-extrabold text-gray-900 mt-1">{value}</p>
+const StatCard = ({ icon: Icon, label, value, color, to, sub }) => (
+  <Link to={to} className="stat-card block group">
+    <div className="flex items-start justify-between mb-4">
+      <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+        style={{ background: color + "20" }}>
+        <Icon size={18} style={{ color }} />
       </div>
-      <div className={`w-12 h-12 rounded-2xl ${color} flex items-center justify-center`}>
-        <Icon className="w-6 h-6 text-white" />
-      </div>
+      <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity"
+        style={{ color: "var(--text-muted)" }} />
     </div>
-    <div className="flex items-center gap-1 mt-4 text-xs text-primary font-semibold group-hover:gap-2 transition-all">
-      View all <ArrowRight size={12} />
-    </div>
+    <p className="text-3xl font-bold mb-1" style={{ fontFamily: "Syne", color: "var(--text-primary)" }}>{value}</p>
+    <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>{label}</p>
+    {sub && <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{sub}</p>}
   </Link>
 );
 
 export default function UserDashboard() {
   const { user } = useAuth();
-  const [data, setData] = useState({ listings: [], complaints: [], notifications: [], unread: 0 });
+  const [data, setData]   = useState({ listings: [], complaints: [], notifications: [], unread: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,15 +33,15 @@ export default function UserDashboard() {
         const [l, c, n] = await Promise.all([
           listingAPI.getAll({ limit: 4 }),
           complaintAPI.getAll({ limit: 5 }),
-          notificationAPI.getAll({ limit: 5 }),
+          notificationAPI.getAll({ limit: 6 }),
         ]);
         setData({
-          listings: l.data.data.listings,
-          complaints: c.data.data.complaints,
+          listings:      l.data.data.listings,
+          complaints:    c.data.data.complaints,
           notifications: n.data.data.notifications,
-          unread: n.data.data.unreadCount,
+          unread:        n.data.data.unreadCount,
         });
-      } catch { /* handled globally */ }
+      } catch {}
       finally { setLoading(false); }
     };
     fetch();
@@ -50,48 +49,72 @@ export default function UserDashboard() {
 
   if (loading) return <PageLayout><Spinner /></PageLayout>;
 
+  const greeting = new Date().getHours() < 12 ? "Good morning" : new Date().getHours() < 17 ? "Good afternoon" : "Good evening";
+
   return (
     <PageLayout>
-      {/* Welcome */}
-      <div className="relative overflow-hidden rounded-2xl bg-brand-gradient p-8 mb-8 text-white">
-        <div className="relative z-10">
-          <p className="text-white/70 text-sm font-semibold mb-1">Good day,</p>
-          <h1 className="text-3xl font-extrabold">{user?.name} 👋</h1>
-          <p className="text-white/80 mt-1 text-sm">Welcome to your society dashboard.</p>
+      {/* Hero banner */}
+      <div className="relative overflow-hidden rounded-2xl mb-8 p-8"
+        style={{ background: "linear-gradient(135deg, #0A1628 0%, #0F2D4A 60%, #0A1628 100%)" }}>
+        <div className="absolute top-0 right-0 w-64 h-64 opacity-20 pointer-events-none"
+          style={{ background: "radial-gradient(circle at top right, #10B981, transparent)" }} />
+        <div className="absolute bottom-0 left-1/2 w-48 h-48 opacity-10 pointer-events-none"
+          style={{ background: "radial-gradient(circle, #3B82F6, transparent)" }} />
+        <div className="relative z-10 flex items-center justify-between">
+          <div>
+            <p className="text-sm mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>{greeting} 👋</p>
+            <h1 className="text-3xl font-bold text-white mb-2" style={{ fontFamily: "Syne" }}>{user?.name}</h1>
+            <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
+              Welcome to your society dashboard
+            </p>
+          </div>
+          <div className="hidden sm:block">
+            <Avatar src={user?.avatar?.url} name={user?.name} size="lg" />
+          </div>
         </div>
-        <TrendingUp className="absolute right-8 top-1/2 -translate-y-1/2 w-32 h-32 text-white/10" />
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard icon={ShoppingBag} label="Listings" value={data.listings.length} color="bg-primary" to="/marketplace" />
-        <StatCard icon={MessageSquare} label="My Complaints" value={data.complaints.length} color="bg-secondary" to="/complaints" />
-        <StatCard icon={Bell} label="Unread Alerts" value={data.unread} color="bg-amber-500" to="/notifications" />
-        <StatCard icon={Wrench} label="Services" value="—" color="bg-purple-500" to="/services" />
+        <StatCard icon={ShoppingBag} label="Active Listings" value={data.listings.length} color="#10B981" to="/marketplace" />
+        <StatCard icon={MessageSquare} label="My Complaints" value={data.complaints.length} color="#3B82F6" to="/complaints" />
+        <StatCard icon={Bell} label="Unread Alerts" value={data.unread} color="#F59E0B" to="/notifications" />
+        <StatCard icon={Wrench} label="Services" value="View" color="#8B5CF6" to="/services" />
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Recent Listings */}
-        <div className="card">
+      <div className="grid lg:grid-cols-5 gap-5">
+        {/* Recent Listings - wider */}
+        <div className="lg:col-span-3 card">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="font-extrabold text-gray-900">Recent Listings</h2>
-            <Link to="/marketplace" className="text-xs text-primary font-semibold hover:underline">View all</Link>
+            <h2 className="font-bold" style={{ fontFamily: "Syne", color: "var(--text-primary)", fontSize: "16px" }}>Recent Listings</h2>
+            <Link to="/marketplace" className="text-xs font-semibold flex items-center gap-1"
+              style={{ color: "var(--emerald)" }}>
+              View all <ArrowUpRight size={12} />
+            </Link>
           </div>
           {data.listings.length === 0 ? (
-            <p className="text-sm text-gray-400 py-4 text-center">No listings yet.</p>
+            <p className="text-sm py-8 text-center" style={{ color: "var(--text-muted)" }}>No listings yet.</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {data.listings.map((l) => (
                 <Link key={l._id} to={`/marketplace/${l._id}`}
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                  <div className="w-12 h-12 rounded-xl bg-gray-100 overflow-hidden shrink-0">
+                  className="flex items-center gap-3 p-3 rounded-xl transition-colors group"
+                  style={{ background: "transparent" }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = "var(--surface-2)"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
+                  <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0"
+                    style={{ background: "var(--surface-2)" }}>
                     {l.images?.[0]?.url
                       ? <img src={l.images[0].url} alt={l.title} className="w-full h-full object-cover" />
-                      : <ShoppingBag className="w-6 h-6 text-gray-400 m-3" />}
+                      : <div className="w-full h-full flex items-center justify-center">
+                          <ShoppingBag size={18} style={{ color: "var(--text-muted)" }} />
+                        </div>}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-gray-900 truncate">{l.title}</p>
-                    <p className="text-xs text-gray-500">₹{l.price.toLocaleString()}</p>
+                    <p className="text-sm font-semibold truncate" style={{ color: "var(--text-primary)" }}>{l.title}</p>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                      ₹{l.price?.toLocaleString()} · {l.condition?.replace(/_/g, " ")}
+                    </p>
                   </div>
                   <Badge label={l.status} />
                 </Link>
@@ -100,27 +123,39 @@ export default function UserDashboard() {
           )}
         </div>
 
-        {/* Recent Notifications */}
-        <div className="card">
+        {/* Notifications - narrower */}
+        <div className="lg:col-span-2 card">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="font-extrabold text-gray-900">Notifications</h2>
-            <Link to="/notifications" className="text-xs text-primary font-semibold hover:underline">View all</Link>
+            <h2 className="font-bold" style={{ fontFamily: "Syne", color: "var(--text-primary)", fontSize: "16px" }}>Notifications</h2>
+            {data.unread > 0 && (
+              <span className="badge badge-green">{data.unread} new</span>
+            )}
           </div>
           {data.notifications.length === 0 ? (
-            <p className="text-sm text-gray-400 py-4 text-center">No notifications.</p>
+            <p className="text-sm py-8 text-center" style={{ color: "var(--text-muted)" }}>All caught up!</p>
           ) : (
             <div className="space-y-2">
               {data.notifications.map((n) => (
-                <div key={n._id} className={`flex gap-3 p-3 rounded-xl ${!n.isRead ? "bg-primary-50 border border-primary/20" : "hover:bg-gray-50"}`}>
-                  <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${!n.isRead ? "bg-primary" : "bg-gray-300"}`} />
-                  <div>
-                    <p className="text-sm text-gray-800">{n.message}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{new Date(n.createdAt).toLocaleDateString()}</p>
+                <div key={n._id}
+                  className="flex gap-3 p-3 rounded-xl"
+                  style={{ background: !n.isRead ? "var(--emerald-glow)" : "transparent" }}>
+                  <div className="w-1.5 h-1.5 rounded-full mt-2 shrink-0"
+                    style={{ background: !n.isRead ? "var(--emerald)" : "var(--border)" }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>{n.message}</p>
+                    <p className="text-xs mt-1 flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
+                      <Clock size={10} />
+                      {new Date(n.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
           )}
+          <Link to="/notifications" className="block mt-4 text-center text-xs font-semibold py-2 rounded-xl transition-colors"
+            style={{ color: "var(--emerald)", background: "var(--emerald-glow)" }}>
+            View all notifications →
+          </Link>
         </div>
       </div>
     </PageLayout>

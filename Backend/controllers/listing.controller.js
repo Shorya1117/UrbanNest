@@ -18,7 +18,7 @@ const getListings = async (req, res, next) => {
     const skip = (Number(page) - 1) * Number(limit);
     const [listings, total] = await Promise.all([
       Listing.find(filter)
-        .populate("sellerId", "name avatar flatId")
+        .populate("sellerId", "name avatar phone flatId")
         .populate("categoryId", "name")
         .sort({ createdAt: -1 })
         .skip(skip)
@@ -54,7 +54,7 @@ const getListing = async (req, res, next) => {
 // ─── Create Listing ───────────────────────────────────────────────────────────
 const createListing = async (req, res, next) => {
   try {
-    const { title, description, price, categoryId, condition, negotiable } = req.body;
+    const { title, description, price, categoryId, condition, negotiable, sellerName, sellerPhone } = req.body;
 
     if (!title || !description || price === undefined || !categoryId || !condition)
       return errorResponse(res, 400, "title, description, price, categoryId, condition are required.");
@@ -85,6 +85,10 @@ const createListing = async (req, res, next) => {
       images,
       sellerId: req.user._id,
       societyId: req.societyId,
+      sellerContact: {
+        name:  sellerName  || req.user.name  || null,
+        phone: sellerPhone || req.user.phone || null,
+      },
     });
 
     return successResponse(res, 201, "Listing created.", { listing });

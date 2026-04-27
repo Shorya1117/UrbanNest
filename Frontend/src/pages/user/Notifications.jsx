@@ -1,22 +1,22 @@
 import { useEffect, useState } from "react";
-import { Bell, CheckCheck, Trash2 } from "lucide-react";
+import { Bell, CheckCheck, Trash2, Megaphone, MessageSquare, ShoppingBag, Wrench, Info } from "lucide-react";
 import toast from "react-hot-toast";
 import { notificationAPI } from "../../api/services";
 import { PageLayout, PageHeader } from "../../components/layout";
 import { Button, Spinner, EmptyState } from "../../components/ui";
 
-const TYPE_COLORS = {
-  COMPLAINT_UPDATE: "bg-blue-100 text-blue-800",
-  MARKETPLACE: "bg-green-100 text-green-800",
-  SERVICE: "bg-purple-100 text-purple-800",
-  APPROVAL: "bg-yellow-100 text-yellow-800",
-  ANNOUNCEMENT: "bg-red-100 text-red-800",
-  GENERAL: "bg-gray-100 text-gray-700",
+const TYPE_CONFIG = {
+  COMPLAINT_UPDATE: { icon: MessageSquare, color: "#3B82F6", bg: "rgba(59,130,246,0.1)",  label: "Complaint" },
+  MARKETPLACE:      { icon: ShoppingBag,   color: "#10B981", bg: "rgba(16,185,129,0.1)", label: "Marketplace" },
+  SERVICE:          { icon: Wrench,        color: "#8B5CF6", bg: "rgba(139,92,246,0.1)",  label: "Service" },
+  ANNOUNCEMENT:     { icon: Megaphone,     color: "#EF4444", bg: "rgba(239,68,68,0.1)",   label: "Announcement" },
+  APPROVAL:         { icon: CheckCheck,    color: "#F59E0B", bg: "rgba(245,158,11,0.1)",  label: "Approval" },
+  GENERAL:          { icon: Info,          color: "#64748B", bg: "rgba(100,116,139,0.1)", label: "General" },
 };
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
-  const [unread, setUnread] = useState(0);
+  const [unread, setUnread]   = useState(0);
   const [loading, setLoading] = useState(true);
 
   const fetch = async () => {
@@ -25,7 +25,8 @@ export default function Notifications() {
       const res = await notificationAPI.getAll();
       setNotifications(res.data.data.notifications);
       setUnread(res.data.data.unreadCount);
-    } catch { } finally { setLoading(false); }
+    } catch {}
+    finally { setLoading(false); }
   };
 
   useEffect(() => { fetch(); }, []);
@@ -35,7 +36,7 @@ export default function Notifications() {
       await notificationAPI.markRead(id);
       setNotifications((prev) => prev.map((n) => n._id === id ? { ...n, isRead: true } : n));
       setUnread((u) => Math.max(0, u - 1));
-    } catch { toast.error("Failed to mark as read."); }
+    } catch {}
   };
 
   const markAllRead = async () => {
@@ -44,54 +45,72 @@ export default function Notifications() {
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       setUnread(0);
       toast.success("All marked as read.");
-    } catch { toast.error("Failed."); }
+    } catch {}
   };
 
   const remove = async (id) => {
     try {
       await notificationAPI.remove(id);
       setNotifications((prev) => prev.filter((n) => n._id !== id));
-    } catch { toast.error("Failed to delete."); }
+    } catch {}
   };
 
   return (
     <PageLayout>
       <PageHeader
-        title={<span>Notifications {unread > 0 && <span className="ml-2 text-sm bg-primary text-white px-2.5 py-0.5 rounded-full">{unread}</span>}</span>}
-        action={unread > 0 && <Button variant="secondary" size="sm" onClick={markAllRead}><CheckCheck size={15} /> Mark all read</Button>}
+        title={<span>Notifications {unread > 0 && (
+          <span className="ml-2 text-sm font-bold px-2 py-0.5 rounded-full align-middle"
+            style={{ background: "var(--emerald)", color: "#fff" }}>{unread}</span>
+        )}</span>}
+        action={unread > 0 && (
+          <Button variant="secondary" size="sm" onClick={markAllRead}>
+            <CheckCheck size={14} /> Mark all read
+          </Button>
+        )}
       />
 
       {loading ? <Spinner /> : notifications.length === 0 ? (
         <EmptyState icon={Bell} title="No notifications" description="You're all caught up! New alerts will appear here." />
       ) : (
-        <div className="space-y-3">
-          {notifications.map((n) => (
-            <div key={n._id}
-              className={`flex items-start gap-4 p-4 rounded-2xl border transition-all ${!n.isRead ? "bg-primary-50 border-primary/20" : "bg-white border-gray-100 hover:border-gray-200"}`}>
-              <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${!n.isRead ? "bg-primary" : "bg-gray-300"}`} />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${TYPE_COLORS[n.type] || TYPE_COLORS.GENERAL}`}>
-                    {n.type?.replace("_", " ")}
-                  </span>
-                  <span className="text-xs text-gray-400">{new Date(n.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</span>
+        <div className="space-y-2">
+          {notifications.map((n) => {
+            const cfg = TYPE_CONFIG[n.type] || TYPE_CONFIG.GENERAL;
+            const Icon = cfg.icon;
+            return (
+              <div key={n._id}
+                onClick={() => !n.isRead && markRead(n._id)}
+                className="flex items-start gap-4 p-4 rounded-2xl cursor-pointer transition-all animate-fade-in"
+                style={{
+                  background: !n.isRead ? cfg.bg : "var(--surface)",
+                  border: `1px solid ${!n.isRead ? "transparent" : "var(--border)"}`,
+                }}>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: cfg.bg }}>
+                  <Icon size={16} style={{ color: cfg.color }} />
                 </div>
-                <p className="text-sm text-gray-800">{n.message}</p>
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
-                {!n.isRead && (
-                  <button onClick={() => markRead(n._id)} title="Mark as read"
-                    className="p-1.5 text-primary hover:bg-primary-100 rounded-lg transition-colors">
-                    <CheckCheck size={15} />
-                  </button>
-                )}
-                <button onClick={() => remove(n._id)} title="Delete"
-                  className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                  <Trash2 size={15} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-bold" style={{ color: cfg.color }}>{cfg.label}</span>
+                    {!n.isRead && (
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0"
+                        style={{ background: cfg.color }} />
+                    )}
+                  </div>
+                  <p className="text-sm" style={{ color: "var(--text-primary)" }}>{n.message}</p>
+                  <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                    {new Date(n.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+                  </p>
+                </div>
+                <button onClick={(e) => { e.stopPropagation(); remove(n._id); }}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg shrink-0 btn-ghost transition-opacity opacity-0 hover:opacity-100"
+                  style={{ color: "var(--text-muted)" }}
+                  onMouseEnter={(e) => e.currentTarget.style.opacity = "1"}
+                  onMouseLeave={(e) => e.currentTarget.style.opacity = "0"}>
+                  <Trash2 size={13} />
                 </button>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </PageLayout>

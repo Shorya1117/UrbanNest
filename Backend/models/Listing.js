@@ -61,6 +61,10 @@ const listingSchema = new mongoose.Schema(
       ref: "Society",
       required: [true, "Society reference is required"],
     },
+    sellerContact: {
+      name:  { type: String, trim: true, default: null },
+      phone: { type: String, trim: true, default: null },
+    },
     soldAt: {
       type: Date,
       default: null,
