@@ -177,38 +177,40 @@ export default function ListingDetail() {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm text-white shrink-0"
                 style={{ background: "linear-gradient(135deg, #10B981, #3B82F6)" }}>
-                {seller?.name?.charAt(0)?.toUpperCase() || "?"}
+                {(listing.sellerContact?.name || seller?.name)?.charAt(0)?.toUpperCase() || "?"}
               </div>
               <div>
                 <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
                   {listing.sellerContact?.name || seller?.name || "Society Member"}
                 </p>
-                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                  {seller?.flatId
-                    ? `Flat ${seller.flatId.blockNumber || ""}${seller.flatId.flatNumber || ""}`
-                    : "Society Resident"}
-                </p>
+                {seller?.flatId?.flatNumber ? (
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                    Flat {seller.flatId.blockNumber || ""}{seller.flatId.flatNumber}
+                  </p>
+                ) : (
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Society Resident</p>
+                )}
               </div>
             </div>
 
             {/* Contact section — phone from seller profile */}
-            {!isSeller && listing.status === "AVAILABLE" && (
-              <div className="space-y-2">
-                {/* Show seller phone if available */}
-                {(listing.sellerContact?.phone || seller?.phone) ? (
-                  <a href={`tel:${listing.sellerContact?.phone || seller?.phone}`}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all"
-                    style={{ background: "var(--emerald)", color: "#fff" }}>
-                    <Phone size={15} /> Call Seller · {listing.sellerContact?.phone || seller?.phone}
-                  </a>
-                ) : (
-                  <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm"
-                    style={{ background: "var(--surface-2)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
-                    <Phone size={14} /> Contact via society WhatsApp group
-                  </div>
-                )}
-              </div>
-            )}
+              {!isSeller && listing.status === "AVAILABLE" && (
+                <div className="space-y-2">
+                  {(listing.sellerContact?.phone || seller?.phone) ? (
+                    <a href={`tel:${listing.sellerContact?.phone || seller?.phone}`}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                      style={{ background: "var(--emerald)", color: "#fff" }}>
+                      <Phone size={15} /> Call · {listing.sellerContact?.phone || seller?.phone}
+                    </a>
+                  ) : (
+                    <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm"
+                      style={{ background: "var(--surface-2)", color: "var(--text-muted)", 
+                              border: "1px solid var(--border)" }}>
+                      <Phone size={14} /> No contact number provided
+                    </div>
+                  )}
+                </div>
+              )}
 
             {/* Seller actions */}
             {isSeller && listing.status === "AVAILABLE" && (

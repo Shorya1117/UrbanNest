@@ -36,12 +36,12 @@ export default function UserDashboard() {
           notificationAPI.getAll({ limit: 6 }),
         ]);
         setData({
-          listings:      l.data.data.listings,
-          complaints:    c.data.data.complaints,
-          notifications: n.data.data.notifications,
-          unread:        n.data.data.unreadCount,
+          listings:      l.data.data.listings      || [],
+          complaints:    c.data.data.complaints    || [],
+          notifications: n.data.data.notifications || [],
+          unread:        n.data.data.unreadCount   || 0,
         });
-      } catch {}
+      }catch (err) { console.error("Dashboard fetch failed:", err); }
       finally { setLoading(false); }
     };
     fetch();

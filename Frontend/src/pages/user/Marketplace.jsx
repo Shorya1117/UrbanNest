@@ -62,18 +62,17 @@ function ListingCard({ listing, onSold, onDelete, currentUserId }) {
             {listing.condition?.replace(/_/g, " ")}
           </span>
         </div>
-
-        {/* Seller info — Fix 3 */}
-        <div className="flex items-center gap-2 pt-3 mt-auto" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-          <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-            style={{ background: "linear-gradient(135deg, #10B981, #3B82F6)", fontSize: "9px" }}>
-            {listing.sellerId?.name?.charAt(0)?.toUpperCase() || "?"}
+          {/* Seller info */}
+          <div className="flex items-center gap-2 pt-3 mt-auto" 
+            style={{ borderTop: "1px solid var(--border-subtle)" }}>
+            <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+              style={{ background: "linear-gradient(135deg, #10B981, #3B82F6)", fontSize: "9px" }}>
+              {(listing.sellerId?.name || listing.sellerContact?.name)?.charAt(0)?.toUpperCase() || "?"}
+            </div>
+            <span className="text-xs truncate flex-1" style={{ color: "var(--text-muted)" }}>
+              {listing.sellerId?.name || listing.sellerContact?.name || "Society Member"}
+            </span>
           </div>
-          <span className="text-xs truncate flex-1" style={{ color: "var(--text-muted)" }}>
-            {listing.sellerId?.name || "Society Member"}
-          </span>
-        </div>
-
         {isSeller && listing.status === "AVAILABLE" && (
           <div className="flex gap-2 mt-3 pt-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
             <button onClick={() => onSold(listing._id)}
@@ -94,14 +93,17 @@ function ListingCard({ listing, onSold, onDelete, currentUserId }) {
 }
 
 function CreateListingModal({ open, onClose, onCreated }) {
-  const EMPTY = { title: "", description: "", price: "", condition: "GOOD", negotiable: false, categoryId: "", sellerName: "", sellerPhone: "" };
-  const [form, setForm]     = useState(EMPTY);
-  const [files, setFiles]   = useState([]);
+  const EMPTY = {
+    title: "", description: "", price: "", condition: "GOOD",
+    negotiable: false, categoryId: "", sellerName: "", sellerPhone: ""
+  };
+  const [form, setForm]         = useState(EMPTY);
+  const [files, setFiles]       = useState([]);
   const [previews, setPreviews] = useState([]);
   const [categories, setCategories] = useState([]);
   const [catLoading, setCatLoading] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [loading, setLoading]   = useState(false);
+  const [errors, setErrors]     = useState({});
 
   useEffect(() => {
     if (!open) return;
@@ -114,11 +116,11 @@ function CreateListingModal({ open, onClose, onCreated }) {
 
   const validate = () => {
     const e = {};
-    if (!form.title.trim())        e.title       = "Required";
-    if (!form.description.trim())  e.description = "Required";
-    if (!form.price)               e.price       = "Required";
-    if (!form.categoryId)          e.categoryId  = "Select a category";
-    if (!form.sellerPhone)           e.sellerPhone = "Phone number is required.";
+    if (!form.title.trim())       e.title       = "Required";
+    if (!form.description.trim()) e.description = "Required";
+    if (!form.price)              e.price       = "Required";
+    if (!form.categoryId)         e.categoryId  = "Select a category";
+    if (!form.sellerPhone)        e.sellerPhone = "Phone number is required.";
     return e;
   };
 
@@ -132,7 +134,8 @@ function CreateListingModal({ open, onClose, onCreated }) {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length) return setErrors(errs);
-    setErrors({}); setLoading(true);
+    setErrors({});
+    setLoading(true);
     try {
       const fd = new FormData();
       fd.append("title",       form.title);
@@ -141,16 +144,19 @@ function CreateListingModal({ open, onClose, onCreated }) {
       fd.append("categoryId",  form.categoryId);
       fd.append("condition",   form.condition);
       fd.append("negotiable",  form.negotiable);
-      fd.append("sellerName",   form.sellerName);
-      fd.append("sellerPhone",  form.sellerPhone);
+      fd.append("sellerName",  form.sellerName);
+      fd.append("sellerPhone", form.sellerPhone);
       files.forEach((f) => fd.append("images", f));
       const res = await listingAPI.create(fd);
       toast.success("Listing created!");
       onCreated(res.data.data.listing);
       handleClose();
     } catch (err) {
+      console.error("Create listing error:", err.response?.data || err);
       toast.error(err.response?.data?.message || "Failed.");
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleClose = () => {
@@ -159,104 +165,139 @@ function CreateListingModal({ open, onClose, onCreated }) {
 
   return (
     <Modal open={open} onClose={handleClose} title="Create Listing" maxWidth="max-w-xl">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-1.5">
-          <label className="label">Title *</label>
-          <input className={`input ${errors.title ? "input-error" : ""}`}
-            placeholder="What are you selling?" value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })} />
-          {errors.title && <p className="text-xs" style={{ color: "#EF4444" }}>{errors.title}</p>}
-        </div>
+      <form onSubmit={handleSubmit}>
 
-        <div className="space-y-1.5">
-          <label className="label">Description *</label>
-          <textarea rows={3} className={`input resize-none ${errors.description ? "input-error" : ""}`}
-            placeholder="Describe condition, age, any defects..." value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })} />
-          {errors.description && <p className="text-xs" style={{ color: "#EF4444" }}>{errors.description}</p>}
-        </div>
+        {/* ── Scrollable fields ── */}
+        <div className="space-y-4" style={{ maxHeight: "65vh", overflowY: "auto", paddingRight: "4px" }}>
 
-        {/* Category */}
-        <div className="space-y-1.5">
-          <label className="label">Category *</label>
-          {catLoading ? (
-            <div className="input text-sm" style={{ color: "var(--text-muted)" }}>Loading categories…</div>
-          ) : categories.length === 0 ? (
-            <div className="input text-sm" style={{ color: "#EF4444" }}>
-              No categories found. Ask admin to create marketplace categories first.
-            </div>
-          ) : (
-            <select className={`input ${errors.categoryId ? "input-error" : ""}`}
-              value={form.categoryId}
-              onChange={(e) => setForm({ ...form, categoryId: e.target.value })}>
-              <option value="">— Select category —</option>
-              {categories.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
-            </select>
-          )}
-          {errors.categoryId && <p className="text-xs" style={{ color: "#EF4444" }}>{errors.categoryId}</p>}
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
+          {/* Title */}
           <div className="space-y-1.5">
-            <label className="label">Price (₹) *</label>
-            <input type="number" min="0" placeholder="0" className={`input ${errors.price ? "input-error" : ""}`}
-              value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
-            {errors.price && <p className="text-xs" style={{ color: "#EF4444" }}>{errors.price}</p>}
+            <label className="label">Title *</label>
+            <input className={`input ${errors.title ? "input-error" : ""}`}
+              placeholder="What are you selling?" value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })} />
+            {errors.title && <p className="text-xs" style={{ color: "#EF4444" }}>{errors.title}</p>}
           </div>
+
+          {/* Description */}
           <div className="space-y-1.5">
-            <label className="label">Condition *</label>
-            <select className="input" value={form.condition}
-              onChange={(e) => setForm({ ...form, condition: e.target.value })}>
-              {CONDITIONS.map((c) => <option key={c} value={c}>{c.replace(/_/g, " ")}</option>)}
-            </select>
+            <label className="label">Description *</label>
+            <textarea rows={3} className={`input resize-none ${errors.description ? "input-error" : ""}`}
+              placeholder="Describe condition, age, any defects..." value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            {errors.description && <p className="text-xs" style={{ color: "#EF4444" }}>{errors.description}</p>}
           </div>
-        </div>
 
-        <label className="flex items-center gap-2.5 cursor-pointer">
-          <div className="relative">
-            <input type="checkbox" className="sr-only" checked={form.negotiable}
-              onChange={(e) => setForm({ ...form, negotiable: e.target.checked })} />
-            <div className="w-10 h-5 rounded-full transition-colors"
-              style={{ background: form.negotiable ? "var(--emerald)" : "var(--border)" }}>
-              <div className="w-4 h-4 bg-white rounded-full absolute top-0.5 transition-transform shadow"
-                style={{ left: form.negotiable ? "22px" : "2px" }} />
+          {/* Category */}
+          <div className="space-y-1.5">
+            <label className="label">Category *</label>
+            {catLoading ? (
+              <div className="input text-sm" style={{ color: "var(--text-muted)" }}>Loading categories…</div>
+            ) : categories.length === 0 ? (
+              <div className="input text-sm" style={{ color: "#EF4444" }}>
+                No categories found. Ask admin to create marketplace categories first.
+              </div>
+            ) : (
+              <select className={`input ${errors.categoryId ? "input-error" : ""}`}
+                value={form.categoryId}
+                onChange={(e) => setForm({ ...form, categoryId: e.target.value })}>
+                <option value="">— Select category —</option>
+                {categories.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
+              </select>
+            )}
+            {errors.categoryId && <p className="text-xs" style={{ color: "#EF4444" }}>{errors.categoryId}</p>}
+          </div>
+
+          {/* Price + Condition */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="label">Price (₹) *</label>
+              <input type="number" min="0" placeholder="0"
+                className={`input ${errors.price ? "input-error" : ""}`}
+                value={form.price}
+                onChange={(e) => setForm({ ...form, price: e.target.value })} />
+              {errors.price && <p className="text-xs" style={{ color: "#EF4444" }}>{errors.price}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <label className="label">Condition *</label>
+              <select className="input" value={form.condition}
+                onChange={(e) => setForm({ ...form, condition: e.target.value })}>
+                {CONDITIONS.map((c) => <option key={c} value={c}>{c.replace(/_/g, " ")}</option>)}
+              </select>
             </div>
           </div>
-          <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>Price is negotiable</span>
-        </label>
 
-        {/* Image upload */}
-        <div className="space-y-2">
-          <label className="label">Photos (up to 5)</label>
-          <label className="flex flex-col items-center justify-center gap-2 p-6 rounded-xl cursor-pointer transition-colors"
-            style={{ border: "2px dashed var(--border)", background: "var(--surface-2)" }}>
-            <input type="file" accept="image/*" multiple className="hidden"
-              onChange={(e) => handleFiles(e.target.files)} />
-            <div className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>
-              Click or drag images here
+          {/* Seller Name + Phone */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="label">Your Name</label>
+              <input className="input" placeholder="Display name"
+                value={form.sellerName}
+                onChange={(e) => setForm({ ...form, sellerName: e.target.value })} />
             </div>
-            <div className="text-xs" style={{ color: "var(--text-muted)" }}>JPG, PNG up to 5MB each</div>
+            <div className="space-y-1.5">
+              <label className="label">Phone Number *</label>
+              <input className={`input ${errors.sellerPhone ? "input-error" : ""}`}
+                placeholder="10-digit number" value={form.sellerPhone}
+                onChange={(e) => setForm({ ...form, sellerPhone: e.target.value })} />
+              {errors.sellerPhone && <p className="text-xs" style={{ color: "#EF4444" }}>{errors.sellerPhone}</p>}
+            </div>
+          </div>
+
+          {/* Negotiable toggle */}
+          <label className="flex items-center gap-2.5 cursor-pointer">
+            <div className="relative">
+              <input type="checkbox" className="sr-only" checked={form.negotiable}
+                onChange={(e) => setForm({ ...form, negotiable: e.target.checked })} />
+              <div className="w-10 h-5 rounded-full transition-colors"
+                style={{ background: form.negotiable ? "var(--emerald)" : "var(--border)" }}>
+                <div className="w-4 h-4 bg-white rounded-full absolute top-0.5 transition-transform shadow"
+                  style={{ left: form.negotiable ? "22px" : "2px" }} />
+              </div>
+            </div>
+            <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+              Price is negotiable
+            </span>
           </label>
-          {previews.length > 0 && (
-            <div className="flex gap-2 flex-wrap mt-2">
-              {previews.map((p, i) => (
-                <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden"
-                  style={{ border: "2px solid var(--emerald)" }}>
-                  <img src={p} alt="" className="w-full h-full object-cover" />
-                  {i === 0 && (
-                    <div className="absolute bottom-0 left-0 right-0 text-center text-white"
-                      style={{ fontSize: "8px", background: "var(--emerald)", padding: "1px" }}>COVER</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
 
-        <div className="flex gap-3 pt-2">
+          {/* Image upload */}
+          <div className="space-y-2">
+            <label className="label">Photos (up to 5)</label>
+            <label className="flex flex-col items-center justify-center gap-2 p-6 rounded-xl cursor-pointer transition-colors"
+              style={{ border: "2px dashed var(--border)", background: "var(--surface-2)" }}>
+              <input type="file" accept="image/*" multiple className="hidden"
+                onChange={(e) => handleFiles(e.target.files)} />
+              <div className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>
+                Click or drag images here
+              </div>
+              <div className="text-xs" style={{ color: "var(--text-muted)" }}>JPG, PNG up to 5MB each</div>
+            </label>
+            {previews.length > 0 && (
+              <div className="flex gap-2 flex-wrap mt-2">
+                {previews.map((p, i) => (
+                  <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden"
+                    style={{ border: "2px solid var(--emerald)" }}>
+                    <img src={p} alt="" className="w-full h-full object-cover" />
+                    {i === 0 && (
+                      <div className="absolute bottom-0 left-0 right-0 text-center text-white"
+                        style={{ fontSize: "8px", background: "var(--emerald)", padding: "1px" }}>
+                        COVER
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+        </div>{/* end scrollable area */}
+
+        {/* ── Pinned buttons — always visible ── */}
+        <div className="flex gap-3 pt-4 mt-4" style={{ borderTop: "1px solid var(--border)" }}>
           <Button type="button" variant="ghost" onClick={handleClose} className="flex-1">Cancel</Button>
           <Button type="submit" loading={loading} className="flex-1">Create Listing</Button>
         </div>
+
       </form>
     </Modal>
   );
@@ -288,10 +329,11 @@ export default function Marketplace() {
       if (condition)      params.condition  = condition;
       if (categoryFilter) params.categoryId = categoryFilter;
       const res = await listingAPI.getAll(params);
-      setListings(res.data.data.listings);
-      setPagination(res.data.data.pagination);
-    } catch {}
-    finally { setLoading(false); }
+      setListings(res.data.data.listings   || []);   
+      setPagination(res.data.data.pagination || {}); 
+    } catch (err) {
+      console.error("Marketplace fetch failed:", err); 
+    } finally { setLoading(false); }
   }, [page, search, condition, categoryFilter]);
 
   useEffect(() => { fetchListings(); }, [fetchListings]);
@@ -359,7 +401,7 @@ export default function Marketplace() {
                 onSold={handleSold} onDelete={handleDelete} currentUserId={user?._id} />
             ))}
           </div>
-          {pagination.pages > 1 && (
+          {(pagination?.pages ?? 0) > 1 && (
             <div className="flex items-center justify-center gap-3 mt-8">
               <Button variant="secondary" size="sm" disabled={page === 1} onClick={() => setPage(page - 1)}>Previous</Button>
               <span className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>

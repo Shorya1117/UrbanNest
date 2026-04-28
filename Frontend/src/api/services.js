@@ -108,3 +108,13 @@ export const excelAPI = {
   import: (formData) =>
     api.post("/excel/import", formData, { headers: { "Content-Type": "multipart/form-data" } }),
 };
+
+// ─── Bookings ─────────────────────────────────────────────────────────────────
+export const bookingAPI = {
+  create: (data) => api.post("/bookings", data),
+  getMy: (params) => api.get("/bookings/my", { params }),
+  getAll: (params) => api.get("/bookings", { params }),
+  updateStatus: (id, data) => api.patch(`/bookings/${id}/status`, data),
+  cancel: (id) => api.delete(`/bookings/${id}`),
+  getStats: () => api.get("/bookings/stats"),
+};

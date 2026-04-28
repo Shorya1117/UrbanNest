@@ -40,16 +40,22 @@ const getListings = async (req, res, next) => {
 const getListing = async (req, res, next) => {
   try {
     const listing = await Listing.findOne({ _id: req.params.id, societyId: req.societyId })
-      .populate("sellerId", "name avatar phone flatId")
+      .populate({
+        path: "sellerId",
+        select: "name avatar phone flatId",
+        populate: { path: "flatId", select: "flatNumber blockNumber" }
+      })
       .populate("buyerId", "name")
       .populate("categoryId", "name")
       .lean();
+
     if (!listing) return errorResponse(res, 404, "Listing not found.");
     return successResponse(res, 200, "Listing fetched.", { listing });
   } catch (error) {
     next(error);
   }
 };
+
 
 // ─── Create Listing ───────────────────────────────────────────────────────────
 const createListing = async (req, res, next) => {
@@ -179,7 +185,7 @@ const deleteListing = async (req, res, next) => {
 const getMyListings = async (req, res, next) => {
   try {
     const listings = await Listing.find({ sellerId: req.user._id, societyId: req.societyId })
-      .populate("categoryId", "name")
+      .populate({ path: "sellerId", select: "name avatar phone flatId",populate: { path: "flatId", select: "flatNumber blockNumber" } })
       .sort({ createdAt: -1 })
       .lean();
     return successResponse(res, 200, "Your listings fetched.", { listings });

@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Pencil, Trash2, Wrench, Phone } from "lucide-react";
+import { Plus, Pencil, Trash2, Wrench, Phone, Star } from "lucide-react";
 import toast from "react-hot-toast";
-import { serviceAPI } from "../../api/services";
+import { serviceAPI, reviewAPI } from "../../api/services";
 import { PageLayout, PageHeader } from "../../components/layout";
-import { Button, Input, Spinner, EmptyState, Modal, Textarea, ConfirmDialog, Avatar } from "../../components/ui";
+import { Button, Input, Spinner, EmptyState, Modal, Textarea, ConfirmDialog, Avatar, StarRating } from "../../components/ui";
 
+// ─── Service Form (unchanged) ─────────────────────────────────────────────────
 function ServiceForm({ initial, onSave, onCancel, loading }) {
   const [form, setForm] = useState(initial || { name: "", serviceType: "", phone: "", description: "" });
   const [file, setFile] = useState(null);
@@ -40,12 +41,75 @@ function ServiceForm({ initial, onSave, onCancel, loading }) {
   );
 }
 
+// ─── NEW: Reviews Modal for Admin ─────────────────────────────────────────────
+function AdminReviewsModal({ open, onClose, service }) {
+  const [reviews, setReviews] = useState([]);
+  const [stats, setStats] = useState({ average: 0, total: 0 });
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open || !service) return;
+    const fetch = async () => {
+      setLoading(true);
+      try {
+        const res = await reviewAPI.getAll({ targetType: "SERVICE", serviceId: service._id, limit: 50 });
+        setReviews(res.data.data.reviews);
+        setStats(res.data.data.stats);
+      } catch { } finally { setLoading(false); }
+    };
+    fetch();
+  }, [open, service]);
+
+  if (!service) return null;
+  return (
+    <Modal open={open} onClose={onClose} title={`Reviews — ${service.name}`} maxWidth="max-w-xl">
+      {loading ? <Spinner size="sm" /> : (
+        <div className="space-y-5">
+          {/* Stats */}
+          {stats.total > 0 && (
+            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+              <span className="text-4xl font-extrabold text-gray-900">{stats.average || 0}</span>
+              <div>
+                <StarRating value={Math.round(stats.average)} readonly />
+                <p className="text-sm text-gray-500 mt-0.5">{stats.total} review{stats.total !== 1 ? "s" : ""}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Review list */}
+          {reviews.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-6">No reviews yet for this service provider.</p>
+          ) : (
+            <div className="space-y-4 max-h-80 overflow-y-auto">
+              {reviews.map((r) => (
+                <div key={r._id} className="flex gap-3 p-3 bg-gray-50 rounded-xl">
+                  <Avatar src={r.userId?.avatar?.url} name={r.userId?.name} size="sm" />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold text-gray-900">{r.userId?.name || "Anonymous"}</span>
+                      <StarRating value={r.rating} readonly />
+                    </div>
+                    {r.comment && <p className="text-sm text-gray-600 mt-1">{r.comment}</p>}
+                    <p className="text-xs text-gray-400 mt-1">{new Date(r.createdAt).toLocaleDateString("en-IN")}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+// ─── Main Admin Services Page ─────────────────────────────────────────────────
 export default function AdminServices() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [reviewTarget, setReviewTarget] = useState(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -124,11 +188,24 @@ export default function AdminServices() {
                 </div>
               </div>
               {s.description && <p className="text-xs text-gray-500 mb-3 line-clamp-2">{s.description}</p>}
+
+              {/* Rating display */}
+              {s.averageRating > 0 && (
+                <div className="flex items-center gap-2 mb-3">
+                  <Star size={14} className="text-yellow-400 fill-yellow-400" />
+                  <span className="text-sm font-bold text-gray-700">{s.averageRating}</span>
+                  <span className="text-xs text-gray-400">({s.totalReviews} reviews)</span>
+                </div>
+              )}
+
               <div className="flex items-center justify-between">
                 <a href={`tel:${s.phone}`} className="flex items-center gap-1.5 text-sm text-primary font-semibold hover:underline">
                   <Phone size={13} /> {s.phone}
                 </a>
-                <div className="flex gap-2">
+                <div className="flex gap-1.5">
+                  <button onClick={() => setReviewTarget(s)} className="p-1.5 text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 rounded-lg transition-colors" title="View Reviews">
+                    <Star size={14} />
+                  </button>
                   <button onClick={() => setEditTarget(s)} className="p-1.5 text-gray-400 hover:text-primary hover:bg-primary-50 rounded-lg transition-colors">
                     <Pencil size={14} />
                   </button>
@@ -150,6 +227,7 @@ export default function AdminServices() {
       </Modal>
       <ConfirmDialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete}
         title="Delete Service" description={`Remove ${deleteTarget?.name} from the directory?`} loading={deleting} />
+      <AdminReviewsModal open={!!reviewTarget} onClose={() => setReviewTarget(null)} service={reviewTarget} />
     </PageLayout>
   );
 }

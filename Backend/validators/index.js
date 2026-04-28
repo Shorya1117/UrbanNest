@@ -92,6 +92,12 @@ const rules = {
       .isIn(["ANNOUNCEMENT", "COMPLAINT_UPDATE", "MARKETPLACE", "SERVICE", "GENERAL"])
       .withMessage("Invalid notification type"),
   ],
+    updateBookingStatus: [
+    body("status")
+      .isIn(["CONFIRMED", "COMPLETED", "CANCELLED"])
+      .withMessage("Status must be CONFIRMED, COMPLETED, or CANCELLED"),
+    body("adminNotes").optional().isLength({ max: 500 }).withMessage("Admin notes cannot exceed 500 characters"),
+  ],
 };
 
 // Build middleware arrays: [...rules, validate]

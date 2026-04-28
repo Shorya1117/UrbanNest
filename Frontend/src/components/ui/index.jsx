@@ -66,6 +66,9 @@ const BADGE_MAP = {
   AVAILABLE: "badge-green", SOLD: "badge-gray",
   ADMIN: "badge-purple", HEAD: "badge-blue", MEMBER: "badge-gray",
   ACTIVE: "badge-green", INACTIVE: "badge-gray",
+  CONFIRMED: "bg-blue-100 text-blue-800",
+  COMPLETED: "bg-green-100 text-green-800",
+  CANCELLED: "bg-red-100 text-red-800",
 };
 export const Badge = ({ label, className = "" }) => (
   <span className={`badge ${BADGE_MAP[label] || "badge-gray"} ${className}`}>
