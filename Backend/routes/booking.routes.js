@@ -10,13 +10,13 @@ const v = require("../validators");
 router.use(protect, enforceSociety);
 
 // User routes
-router.post("/",     createBooking,  createBooking);
-router.get("/my",    getMyBookings);
-router.delete("/:id", cancelBooking);
+router.post("/",      v.createBooking, createBooking);
+router.get("/my",     getMyBookings);
 
-// Admin routes
-router.get("/",      restrictTo("ADMIN"), getAllBookings);
-router.get("/stats", restrictTo("ADMIN"), getBookingStats);
+// Admin routes  ← move stats UP before /:id
+router.get("/stats",  restrictTo("ADMIN"), getBookingStats);
+router.get("/",       restrictTo("ADMIN"), getAllBookings);
 router.patch("/:id/status", restrictTo("ADMIN"), v.updateBookingStatus, updateBookingStatus);
+router.delete("/:id", cancelBooking);
 
 module.exports = router;

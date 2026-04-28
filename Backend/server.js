@@ -31,6 +31,7 @@ const reviewRoutes       = require("./routes/review.routes");
 const notificationRoutes = require("./routes/notification.routes");
 const excelRoutes        = require("./routes/excel.routes");
 const bookingRoutes      = require("./routes/booking.routes");
+
 const dns = require("dns");
 
 dns.setServers(["8.8.8.8", "1.1.1.1"]);

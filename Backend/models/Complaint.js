@@ -14,11 +14,45 @@ const complaintSchema = new mongoose.Schema(
       trim: true,
       maxlength: [2000, "Description cannot exceed 2000 characters"],
     },
+    // ── New: Problem category (type of issue) ──────────────────────────────
+    category: {
+      type: String,
+      enum: [
+        "electricity",
+        "water",
+        "washroom",
+        "garbage",
+        "security",
+        "maintenance",
+        "garden",
+        "parking",
+        "internet",
+        "other",
+      ],
+      default: "other",
+    },
+    // ── New: Priority / severity level ─────────────────────────────────────
+    priority: {
+      type: String,
+      enum: ["low", "medium", "high"],
+      default: "medium",
+    },
+    // ── New: Flat number and block/tower of the reporter ───────────────────
+    flatNo: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    block: {
+      type: String,
+      trim: true,
+      default: null,
+    },
     images: [
       {
-        url:       { type: String, required: true, trim: true },
-        publicId:  { type: String, required: true, trim: true },
-        altText:   { type: String, trim: true, default: null },
+        url: { type: String, required: true, trim: true },
+        publicId: { type: String, required: true, trim: true }, // Cloudinary public_id for deletion
+        altText: { type: String, trim: true, default: null },
       },
     ],
     status: {
@@ -58,5 +92,7 @@ const complaintSchema = new mongoose.Schema(
 
 complaintSchema.index({ societyId: 1, status: 1 });
 complaintSchema.index({ societyId: 1, createdBy: 1 });
+complaintSchema.index({ societyId: 1, category: 1 });   // new index for category filtering
+complaintSchema.index({ societyId: 1, priority: 1 });   // new index for priority filtering
 
 module.exports = mongoose.model("Complaint", complaintSchema);

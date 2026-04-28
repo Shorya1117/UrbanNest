@@ -8,10 +8,14 @@ import { useTheme } from "../../context/ThemeContext";
 import { Button } from "../../components/ui";
 import logo from "../../assets/logo.jpeg";
 
+const STEPS = { EMAIL: "email", OTP: "otp" };
+const ROLES = { RESIDENT: "resident", ADMIN: "admin" };
+
 export default function UserLogin() {
   const { login } = useAuth();
   const { isDark, toggle } = useTheme();
   const navigate = useNavigate();
+  const [role, setRole] = useState(ROLES.RESIDENT);
 
   const [step, setStep] = useState("email");
   const [email, setEmail] = useState("");
@@ -40,6 +44,7 @@ export default function UserLogin() {
     setLoading(true);
 
     try {
+      // Both Resident and Admin use the same OTP send endpoint on the backend
       await authAPI.sendOTP(email.trim().toLowerCase());
       toast.success("OTP sent to your email!");
       setStep("otp");
@@ -68,7 +73,12 @@ export default function UserLogin() {
 
       login(token, user);
       toast.success(`Welcome back, ${user.name}!`);
-      navigate("/dashboard");
+
+      // Route based on user role
+      if (user.role === "SUPER_ADMIN") navigate("/superadmin");
+      else if (user.role === "ADMIN") navigate("/admin");
+      else navigate("/dashboard");
+      
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -374,7 +384,7 @@ export default function UserLogin() {
                   className="text-sm font-medium"
                   style={{ color: "var(--text-muted)" }}
                 >
-                  ← Change Email
+                  Change Email
                 </button>
 
                 <button
@@ -399,6 +409,11 @@ export default function UserLogin() {
             </>
           )}
         </div>
+
+        {/* Footer */}
+        <p className="text-center text-gray-400 text-sm mt-8">
+          By logging in, you agree to our <span className="text-gray-600 font-bold cursor-pointer">Terms</span> & <span className="text-gray-600 font-bold cursor-pointer">Privacy</span>
+        </p>
       </div>
     </div>
   );

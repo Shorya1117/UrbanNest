@@ -23,7 +23,7 @@ const suggestServiceType = (title, description) => {
 // ─── Create Complaint ──────────────────────────────────────────────────────────
 const createComplaint = async (req, res, next) => {
   try {
-    const { title, description } = req.body;
+    const { title, description, category, priority, flatNo, block } = req.body;
     if (!title || !description)
       return errorResponse(res, 400, "title and description are required.");
 
@@ -44,7 +44,9 @@ const createComplaint = async (req, res, next) => {
     }
 
     const complaint = await Complaint.create({
-      title, description, images,
+      title,
+      description,
+      images,
       createdBy: req.user._id,
       societyId: req.societyId,
     });
@@ -204,7 +206,4 @@ const getSuggestedProviders = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
-module.exports = {
-  createComplaint, getComplaints, getComplaint,
-  updateComplaintStatus, deleteComplaint, getComplaintStats, getSuggestedProviders,
-};
+module.exports = { createComplaint, getComplaints, getComplaint, updateComplaintStatus, deleteComplaint, getComplaintStats ,getSuggestedProviders};

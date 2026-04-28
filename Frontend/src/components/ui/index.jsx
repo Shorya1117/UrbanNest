@@ -61,17 +61,21 @@ export const Textarea = ({ label, error, className = "", ...props }) => (
 );
 
 // ─── Badge ────────────────────────────────────────────────────────────────────
-const BADGE_MAP = {
-  PENDING: "badge-yellow", IN_PROGRESS: "badge-blue", RESOLVED: "badge-green",
-  AVAILABLE: "badge-green", SOLD: "badge-gray",
-  ADMIN: "badge-purple", HEAD: "badge-blue", MEMBER: "badge-gray",
-  ACTIVE: "badge-green", INACTIVE: "badge-gray",
+const badgeMap = {
+  PENDING: "badge-pending",
+  IN_PROGRESS: "badge-progress",
+  RESOLVED: "badge-resolved",
+  AVAILABLE: "badge-available",
+  SOLD: "badge-sold",
   CONFIRMED: "bg-blue-100 text-blue-800",
   COMPLETED: "bg-green-100 text-green-800",
   CANCELLED: "bg-red-100 text-red-800",
+  ADMIN: "bg-purple-100 text-purple-800",
+  HEAD: "bg-blue-100 text-blue-800",
+  MEMBER: "bg-gray-100 text-gray-700",
 };
 export const Badge = ({ label, className = "" }) => (
-  <span className={`badge ${BADGE_MAP[label] || "badge-gray"} ${className}`}>
+  <span className={`badge ${badgeMap[label] || "badge-gray"} ${className}`}>
     {label?.replace(/_/g, " ")}
   </span>
 );

@@ -1,15 +1,13 @@
-import { useEffect, useState, useCallback } from "react";
-import { Plus, MessageSquare, ChevronDown, ChevronUp, Clock, CheckCircle, AlertCircle, Wrench, Phone } from "lucide-react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import {
+  Plus, MessageSquare, ChevronDown, ChevronUp, Clock, CheckCircle, Wrench, Phone, Upload, X, Zap, Droplets,
+  Trash2, Shield, Trees, Car, Wifi, Package,
+  AlertTriangle, AlertCircle, Info, Camera, CheckCircle2,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { complaintAPI } from "../../api/services";
 import { PageLayout, PageHeader } from "../../components/layout";
-import { Button, Spinner, EmptyState, Modal } from "../../components/ui";
-
-const STATUS_CONFIG = {
-  PENDING:     { label: "Pending",     color: "#D97706", bg: "rgba(245,158,11,0.1)",  icon: Clock },
-  IN_PROGRESS: { label: "In Progress", color: "#2563EB", bg: "rgba(59,130,246,0.1)",  icon: AlertCircle },
-  RESOLVED:    { label: "Resolved",    color: "#059669", bg: "rgba(16,185,129,0.1)", icon: CheckCircle },
-};
+import { Button, Badge, Spinner, EmptyState, Modal, Input, Textarea } from "../../components/ui";
 
 function ComplaintCard({ complaint }) {
   const [open, setOpen] = useState(false);
@@ -17,37 +15,19 @@ function ComplaintCard({ complaint }) {
   const Icon = cfg.icon;
 
   return (
-    <div className="card mb-3 animate-fade-in" style={{ padding: "0" }}>
-      <button className="w-full flex items-start gap-4 p-5 text-left"
-        onClick={() => setOpen(!open)}>
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
-          style={{ background: cfg.bg }}>
-          <Icon size={18} style={{ color: cfg.color }} />
-        </div>
+    <div className="card border border-gray-100">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-              {complaint.title}
-            </span>
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-              style={{ background: cfg.bg, color: cfg.color }}>
-              {cfg.label}
-            </span>
+            <h3 className="font-bold text-gray-900 text-sm">{complaint.title}</h3>
+            <Badge label={complaint.status} />
           </div>
-          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-            {new Date(complaint.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-            {complaint.assignedTo && (
-              <span className="ml-2 inline-flex items-center gap-1">
-                <Wrench size={10} /> Assigned: {complaint.assignedTo.name}
-              </span>
-            )}
-          </p>
+          <p className="text-xs text-gray-500">{new Date(complaint.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
         </div>
-        <div className="shrink-0 ml-2" style={{ color: "var(--text-muted)" }}>
-          {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        </div>
-      </button>
-
+        <button onClick={() => setOpen(!open)} className="text-gray-400 hover:text-gray-700 transition-colors">
+          <ChevronDown size={18} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+        </button>
+      </div>
       {open && (
         <div className="px-5 pb-5 space-y-4 animate-fade-in" style={{ borderTop: "1px solid var(--border-subtle)" }}>
           <p className="text-sm leading-relaxed pt-4" style={{ color: "var(--text-secondary)" }}>
@@ -56,35 +36,8 @@ function ComplaintCard({ complaint }) {
 
           {/* Assigned provider */}
           {complaint.assignedTo && (
-            <div className="flex items-center gap-3 p-3 rounded-xl"
-              style={{ background: "var(--emerald-glow)", border: "1px solid rgba(16,185,129,0.2)" }}>
-              <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0"
-                style={{ background: "var(--surface)" }}>
-                {complaint.assignedTo.photo?.url
-                  ? <img src={complaint.assignedTo.photo.url} alt="" className="w-full h-full object-cover" />
-                  : <div className="w-full h-full flex items-center justify-center">
-                      <Wrench size={14} style={{ color: "var(--emerald)" }} />
-                    </div>}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
-                  {complaint.assignedTo.name}
-                </p>
-                <p className="text-xs capitalize" style={{ color: "var(--text-muted)" }}>
-                  {complaint.assignedTo.serviceType}
-                </p>
-              </div>
-              {complaint.assignedTo.phone && (
-                <a href={`tel:${complaint.assignedTo.phone}`}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
-                  style={{ background: "var(--emerald)", color: "#fff" }}>
-                  <Phone size={12} /> Call
-                </a>
-              )}
-            </div>
+            <p className="text-xs text-gray-500">Assigned to: <span className="font-semibold text-gray-700">{complaint.assignedTo.name}</span></p>
           )}
-
-          {/* Resolution note */}
           {complaint.resolutionNote && (
             <div className="p-3 rounded-xl text-xs leading-relaxed"
               style={{ background: "rgba(16,185,129,0.08)", color: "#059669", border: "1px solid rgba(16,185,129,0.15)" }}>
@@ -109,8 +62,122 @@ function ComplaintCard({ complaint }) {
   );
 }
 
+// ─── Image Upload Area ────────────────────────────────────────────────────────
+function ImageUploadArea({ files, onChange }) {
+  const inputRef = useRef(null);
+  const [dragging, setDragging] = useState(false);
+
+  const handleFiles = (incoming) => {
+    const valid = Array.from(incoming).filter((f) => f.type.startsWith("image/"));
+    const merged = [...files, ...valid].slice(0, 3);
+    onChange(merged);
+  };
+
+  const removeFile = (idx) => {
+    const updated = files.filter((_, i) => i !== idx);
+    onChange(updated);
+  };
+
+  const previews = files.map((f) => URL.createObjectURL(f));
+
+  return (
+    <div className="space-y-2">
+      <label className="label flex items-center gap-1.5">
+        <Camera size={14} className="text-gray-400" />
+        Attach Photos <span className="text-gray-400 font-normal">(up to 3 images)</span>
+      </label>
+
+      {/* Preview grid */}
+      {files.length > 0 && (
+        <div className="flex gap-2 flex-wrap mb-2">
+          {previews.map((src, i) => (
+            <div key={i} className="relative group">
+              <img src={src} alt="" className="w-20 h-20 object-cover rounded-xl border-2 border-gray-200" />
+              <button
+                type="button"
+                onClick={() => removeFile(i)}
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow"
+              >
+                <X size={10} />
+              </button>
+            </div>
+          ))}
+          {files.length < 3 && (
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-primary hover:text-primary transition-colors"
+            >
+              <Plus size={18} />
+              <span className="text-xs mt-0.5">Add</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Drop zone (only shown when no files) */}
+      {files.length === 0 && (
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
+          onClick={() => inputRef.current?.click()}
+          className={`border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all
+            ${dragging ? "border-primary bg-primary-50" : "border-gray-300 hover:border-primary hover:bg-gray-50"}`}
+        >
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${dragging ? "bg-primary-100" : "bg-gray-100"}`}>
+            <Upload size={18} className={dragging ? "text-primary" : "text-gray-400"} />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-medium text-gray-700">Drop photos here or <span className="text-primary">browse</span></p>
+            <p className="text-xs text-gray-400 mt-0.5">JPG, PNG, WEBP — up to 3 photos</p>
+          </div>
+        </div>
+      )}
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => handleFiles(e.target.files)}
+      />
+    </div>
+  );
+}
+
+// ─── Step Indicator ───────────────────────────────────────────────────────────
+function StepIndicator({ step }) {
+  const steps = ["Category", "Details", "Priority & Photos"];
+  return (
+    <div className="flex items-center gap-1 mb-6">
+      {steps.map((label, i) => {
+        const idx = i + 1;
+        const done = step > idx;
+        const active = step === idx;
+        return (
+          <div key={i} className="flex items-center gap-1 flex-1">
+            <div className={`flex items-center gap-1.5 ${active ? "opacity-100" : done ? "opacity-80" : "opacity-40"}`}>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0
+                ${done ? "bg-green-500 text-white" : active ? "bg-primary text-white" : "bg-gray-200 text-gray-500"}`}>
+                {done ? <CheckCircle2 size={12} /> : idx}
+              </div>
+              <span className={`text-xs font-semibold whitespace-nowrap hidden sm:block ${active ? "text-primary" : "text-gray-500"}`}>
+                {label}
+              </span>
+            </div>
+            {i < steps.length - 1 && <div className={`flex-1 h-px mx-1 ${step > idx ? "bg-green-400" : "bg-gray-200"}`} />}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Create Complaint Modal ───────────────────────────────────────────────────
 function CreateComplaintModal({ open, onClose, onCreated }) {
-  const [form, setForm]   = useState({ title: "", description: "" });
+  const [form, setForm] = useState({ title: "", description: "" });
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -118,29 +185,28 @@ function CreateComplaintModal({ open, onClose, onCreated }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const errs = {};
-    if (!form.title.trim())       errs.title       = "Title is required.";
-    if (!form.description.trim()) errs.description = "Description is required.";
-    if (Object.keys(errs).length) return setErrors(errs);
-    setErrors({}); setLoading(true);
+    if (!form.title || !form.description) return toast.error("Please fill all required fields.");
+    setLoading(true);
     try {
       const fd = new FormData();
       fd.append("title",       form.title);
       fd.append("description", form.description);
+      if (form.category) fd.append("category", form.category);
+      if (form.priority) fd.append("priority", form.priority);
+      if (form.flatNo) fd.append("flatNo", form.flatNo);
+      if (form.block) fd.append("block", form.block);
       files.forEach((f) => fd.append("images", f));
       const res = await complaintAPI.create(fd);
-      const { complaint, suggestedServiceType, suggestedProviders } = res.data.data;
-      if (suggestedServiceType && suggestedProviders?.length) {
-        setSuggested({ serviceType: suggestedServiceType, providers: suggestedProviders });
-      }
       toast.success("Complaint submitted!");
-      onCreated(complaint);
+      onCreated(res.data.data.complaint);
+      onClose();
       setForm({ title: "", description: "" });
       setFiles([]);
-      if (!suggestedServiceType) onClose();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to submit.");
-    } finally { setLoading(false); }
+      toast.error(err.response?.data?.message || "Failed to submit complaint.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleClose = () => {
@@ -149,82 +215,28 @@ function CreateComplaintModal({ open, onClose, onCreated }) {
   };
 
   return (
-    <Modal open={open} onClose={handleClose} title={suggested ? "Suggested Service Providers" : "Raise a Complaint"} maxWidth="max-w-lg">
-      {suggested ? (
-        <div className="space-y-4 animate-fade-in">
-          <div className="p-4 rounded-xl" style={{ background: "var(--emerald-glow)", border: "1px solid rgba(16,185,129,0.2)" }}>
-            <p className="text-sm font-semibold mb-1" style={{ color: "var(--emerald)" }}>
-              Your complaint has been submitted! ✓
-            </p>
-            <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
-              Based on your complaint, we suggest contacting a <strong>{suggested.serviceType}</strong>:
-            </p>
-          </div>
-          <div className="space-y-2">
-            {suggested.providers.map((p) => (
-              <div key={p._id} className="flex items-center gap-3 p-3 rounded-xl"
-                style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
-                <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0"
-                  style={{ background: "var(--surface)" }}>
-                  {p.photo?.url
-                    ? <img src={p.photo.url} alt="" className="w-full h-full object-cover" />
-                    : <div className="w-full h-full flex items-center justify-center">
-                        <Wrench size={16} style={{ color: "var(--text-muted)" }} />
-                      </div>}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{p.name}</p>
-                  <p className="text-xs capitalize" style={{ color: "var(--text-muted)" }}>{p.serviceType}</p>
-                </div>
-                <a href={`tel:${p.phone}`}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0"
-                  style={{ background: "var(--emerald)", color: "#fff" }}>
-                  <Phone size={12} /> {p.phone}
-                </a>
-              </div>
-            ))}
-          </div>
-          <Button className="w-full" onClick={handleClose}>Done</Button>
+    <Modal open={open} onClose={onClose} title="Raise a Complaint" maxWidth="max-w-lg">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input label="Title *" placeholder="e.g. Water leakage in corridor" value={form.title}
+          onChange={(e) => setForm({ ...form, title: e.target.value })} />
+        <Textarea label="Description *" placeholder="Describe the issue in detail..."
+          value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={5} />
+        <div className="space-y-1.5">
+          <label className="label">Attach Images (up to 3)</label>
+          <input type="file" accept="image/*" multiple onChange={(e) => setFiles(Array.from(e.target.files).slice(0, 3))}
+            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary hover:file:bg-primary-100" />
+          {files.length > 0 && <p className="text-xs text-gray-500">{files.length} file(s) selected</p>}
         </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="label">Title *</label>
-            <input className={`input ${errors.title ? "input-error" : ""}`}
-              placeholder="e.g. Water leakage in corridor"
-              value={form.title}
-              onChange={(e) => { setForm({ ...form, title: e.target.value }); setErrors({ ...errors, title: "" }); }} />
-            {errors.title && <p className="text-xs" style={{ color: "#EF4444" }}>{errors.title}</p>}
-          </div>
-          <div className="space-y-1.5">
-            <label className="label">Description *</label>
-            <textarea rows={4} className={`input resize-none ${errors.description ? "input-error" : ""}`}
-              placeholder="Describe the issue in detail..."
-              value={form.description}
-              onChange={(e) => { setForm({ ...form, description: e.target.value }); setErrors({ ...errors, description: "" }); }} />
-            {errors.description && <p className="text-xs" style={{ color: "#EF4444" }}>{errors.description}</p>}
-          </div>
-          <div className="space-y-1.5">
-            <label className="label">Attach Photos (up to 3)</label>
-            <label className="flex items-center gap-3 p-4 rounded-xl cursor-pointer transition-colors"
-              style={{ border: "2px dashed var(--border)", background: "var(--surface-2)" }}>
-              <input type="file" accept="image/*" multiple className="hidden"
-                onChange={(e) => setFiles(Array.from(e.target.files).slice(0, 3))} />
-              <div className="text-sm" style={{ color: "var(--text-muted)" }}>
-                {files.length > 0 ? `${files.length} file(s) selected` : "Click to attach images"}
-              </div>
-            </label>
-          </div>
-          <div className="flex gap-3 pt-1">
-            <Button type="button" variant="ghost" onClick={handleClose} className="flex-1">Cancel</Button>
-            <Button type="submit" loading={loading} className="flex-1">Submit Complaint</Button>
-          </div>
-        </form>
-      )}
+        <div className="flex gap-3 pt-2">
+          <Button type="button" variant="ghost" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button type="submit" loading={loading} className="flex-1">Submit Complaint</Button>
+        </div>
+      </form>
     </Modal>
   );
 }
 
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Complaints() {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading]       = useState(true);
@@ -238,8 +250,7 @@ export default function Complaints() {
       if (status) params.status = status;
       const res = await complaintAPI.getAll(params);
       setComplaints(res.data.data.complaints);
-    } catch {}
-    finally { setLoading(false); }
+    } catch { } finally { setLoading(false); }
   }, [status]);
 
   useEffect(() => { fetchComplaints(); }, [fetchComplaints]);
@@ -251,34 +262,34 @@ export default function Complaints() {
       <PageHeader
         title="My Complaints"
         description="Track and raise issues in your society"
-        action={<Button onClick={() => setShowModal(true)}><Plus size={15} /> Raise Complaint</Button>}
+        action={<Button onClick={() => setShowModal(true)}><Plus size={16} /> Raise Complaint</Button>}
       />
 
       {/* Status tabs */}
       <div className="flex gap-2 mb-6 flex-wrap">
-        {tabs.map((s) => (
+        {statusTabs.map((s) => (
           <button key={s} onClick={() => setStatus(s)}
-            className="px-4 py-1.5 rounded-full text-xs font-semibold transition-all"
-            style={{
-              background: status === s ? "var(--emerald)" : "var(--surface)",
-              color: status === s ? "#fff" : "var(--text-secondary)",
-              border: `1px solid ${status === s ? "var(--emerald)" : "var(--border)"}`,
-            }}>
+            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${status === s ? "bg-primary text-white" : "bg-white text-gray-600 border border-gray-200 hover:border-primary hover:text-primary"}`}>
             {s || "All"}
           </button>
         ))}
       </div>
 
       {loading ? <Spinner /> : complaints.length === 0 ? (
-        <EmptyState icon={MessageSquare} title="No complaints"
+        <EmptyState icon={MessageSquare} title="No complaints found"
           description="Raise a complaint if you notice any issues in your society."
-          action={<Button onClick={() => setShowModal(true)}><Plus size={15} /> Raise Complaint</Button>} />
+          action={<Button onClick={() => setShowModal(true)}><Plus size={16} /> Raise Complaint</Button>} />
       ) : (
-        <div>{complaints.map((c) => <ComplaintCard key={c._id} complaint={c} />)}</div>
+        <div className="space-y-4">
+          {complaints.map((c) => <ComplaintCard key={c._id} complaint={c} />)}
+        </div>
       )}
 
-      <CreateComplaintModal open={showModal} onClose={() => setShowModal(false)}
-        onCreated={(c) => setComplaints((prev) => [c, ...prev])} />
+      <CreateComplaintModal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        onCreated={(c) => setComplaints((prev) => [c, ...prev])}
+      />
     </PageLayout>
   );
 }

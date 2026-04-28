@@ -92,13 +92,25 @@ const rules = {
       .isIn(["ANNOUNCEMENT", "COMPLAINT_UPDATE", "MARKETPLACE", "SERVICE", "GENERAL"])
       .withMessage("Invalid notification type"),
   ],
-    updateBookingStatus: [
+  createBooking: [
+    body("serviceId").isMongoId().withMessage("Valid service ID is required"),
+    body("date").notEmpty().withMessage("Booking date is required"),
+    body("timeSlot")
+      .isIn(["MORNING", "AFTERNOON", "EVENING"])
+      .withMessage("Time slot must be MORNING, AFTERNOON, or EVENING"),
+    body("notes").optional().isLength({ max: 500 }).withMessage("Notes cannot exceed 500 characters"),
+  ],
+
+  updateBookingStatus: [
     body("status")
       .isIn(["CONFIRMED", "COMPLETED", "CANCELLED"])
       .withMessage("Status must be CONFIRMED, COMPLETED, or CANCELLED"),
     body("adminNotes").optional().isLength({ max: 500 }).withMessage("Admin notes cannot exceed 500 characters"),
   ],
+  
 };
+
+
 
 // Build middleware arrays: [...rules, validate]
 const v = {};

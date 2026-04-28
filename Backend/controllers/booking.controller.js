@@ -167,7 +167,7 @@ const cancelBooking = async (req, res, next) => {
 const getBookingStats = async (req, res, next) => {
   try {
     const stats = await Booking.aggregate([
-      { $match: { societyId: req.user.societyId } },
+      { $match: { societyId: req.societyId } },
       { $group: { _id: "$status", count: { $sum: 1 } } },
     ]);
 

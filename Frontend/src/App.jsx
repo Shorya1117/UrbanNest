@@ -18,8 +18,8 @@ import Marketplace   from "./pages/user/Marketplace";
 import ListingDetail from "./pages/user/ListingDetail";
 import Complaints    from "./pages/user/Complaints";
 import Services      from "./pages/user/Services";
-import Notifications from "./pages/user/Notifications";
 import Bookings      from "./pages/user/Bookings";
+import Notifications from "./pages/user/Notifications";
 // Admin
 import AdminDashboard     from "./pages/admin/AdminDashboard";
 import AdminResidents     from "./pages/admin/AdminResidents";
@@ -27,9 +27,9 @@ import AdminFlats         from "./pages/admin/AdminFlats";
 import AdminCategories    from "./pages/admin/AdminCategories";
 import AdminComplaints    from "./pages/admin/AdminComplaints";
 import AdminServices      from "./pages/admin/AdminServices";
+import AdminBookings      from "./pages/admin/AdminBookings";
 import AdminNotifications from "./pages/admin/AdminNotifications";
 import AdminExcelImport   from "./pages/admin/AdminExcelImport";
-import AdminBookings      from "./pages/admin/AdminBookings";
 const USER_ROLES = ["HEAD", "MEMBER", "ADMIN"];
 
 const NotFoundPage = () => (
@@ -87,6 +87,7 @@ export default function App() {
           <Route path="/marketplace/:id" element={<ProtectedRoute roles={USER_ROLES}><ListingDetail /></ProtectedRoute>} />
           <Route path="/complaints"      element={<ProtectedRoute roles={USER_ROLES}><Complaints /></ProtectedRoute>} />
           <Route path="/services"        element={<ProtectedRoute roles={USER_ROLES}><Services /></ProtectedRoute>} />
+          <Route path="/bookings"        element={<ProtectedRoute roles={USER_ROLES}><Bookings /></ProtectedRoute>} />
           <Route path="/notifications"   element={<ProtectedRoute roles={USER_ROLES}><Notifications /></ProtectedRoute>} />
           <Route path="/bookings"        element={<ProtectedRoute roles={USER_ROLES}><Bookings /></ProtectedRoute>} />
 
