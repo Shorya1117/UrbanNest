@@ -8,7 +8,7 @@ const run = async () => {
   await mongoose.connect(process.env.MONGO_URI);
   console.log("✅ Connected to MongoDB\n");
 
-  const email = "priyanshuks2003@gmail.com";
+  const email = "sharmanilesh7105@gmail.com";
 
   // 1. Ensure a society exists
   let society = await Society.findOne();
@@ -43,7 +43,7 @@ const run = async () => {
   } else {
     console.log("Creating new ADMIN user...");
     user = await User.create({
-      name: "Priyanshu",
+      name: "Nilesh",
       email: email,
       role: "ADMIN",
       societyId: society._id,

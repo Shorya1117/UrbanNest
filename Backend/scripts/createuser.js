@@ -46,7 +46,7 @@ const run = async () => {
 
   // ── Step 3: Create User ────────────────────────────────────────────────────
   const existing = await User.findOne({
-    email: "khandelwalriddhi522@gmail.com",
+    email: "nileshsharma7102005@gmail.com",
     societyId: society._id,
   });
   if (existing) {
@@ -59,8 +59,8 @@ const run = async () => {
 
 const UserModel = mongoose.model("User");
   await UserModel.collection.insertOne({
-    name: "Riddhi",
-    email: "khandelwalriddhi522@gmail.com",
+    name: "Nilesh",
+    email: "nileshsharma7102005@gmail.com",
     phone: "9999999999",
     role: "HEAD",
     societyId: society._id,
@@ -78,7 +78,7 @@ const UserModel = mongoose.model("User");
   console.log("\n🎉 Test User created successfully!\n");
   console.log("──────────────────────────────────────────");
   console.log("  Login URL : http://localhost:3000/login");
-  console.log("  Email     : khandelwalriddhi522@gmail.com");
+  console.log("  Email     : nileshsharma7102005@gmail.com");
   console.log("  Auth      : OTP (check your Gmail)");
   console.log("  Role      : HEAD");
   console.log("  Flat      : A101, Block A");
