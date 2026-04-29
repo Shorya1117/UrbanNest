@@ -1,4 +1,4 @@
-const { Booking, ServiceProvider } = require("../models");
+const { Booking, ServiceProvider, Notification, User } = require("../models");
 const { successResponse, errorResponse } = require("../utils/response");
 
 // ─── Create Booking (User) ───────────────────────────────────────────────────
@@ -45,6 +45,34 @@ const createBooking = async (req, res, next) => {
     });
 
     await booking.populate("serviceId", "name serviceType phone photo");
+
+    // ── Notify the user who made the booking ─────────────────────────────────
+    await Notification.create({
+      userId: req.user._id,
+      societyId: req.societyId,
+      type: "SERVICE",
+      message: `Your booking for "${booking.serviceId.name}" on ${bookingDate.toDateString()} (${timeSlot}) has been received and is pending confirmation.`,
+      metadata: { bookingId: booking._id },
+    });
+
+    // ── Notify all admins in this society ────────────────────────────────────
+    const admins = await User.find(
+      { societyId: req.societyId, role: "ADMIN", isActive: true, isApproved: true },
+      "_id"
+    ).lean();
+
+    if (admins.length > 0) {
+      await Notification.insertMany(
+        admins.map((admin) => ({
+          userId: admin._id,
+          societyId: req.societyId,
+          type: "SERVICE",
+          message: `New booking: ${req.user.name} booked "${booking.serviceId.name}" for ${bookingDate.toDateString()} (${timeSlot}).`,
+          metadata: { bookingId: booking._id },
+        }))
+      );
+    }
+
     return successResponse(res, 201, "Booking created successfully.", { booking });
   } catch (error) {
     next(error);
@@ -132,6 +160,24 @@ const updateBookingStatus = async (req, res, next) => {
 
     await booking.populate("serviceId", "name serviceType phone photo");
     await booking.populate("userId", "name email phone");
+
+    // ── Notify the user about their booking status change ────────────────────
+    const statusMessages = {
+      CONFIRMED: `Your booking for "${booking.serviceId.name}" has been confirmed! 🎉`,
+      COMPLETED: `Your booking for "${booking.serviceId.name}" has been marked as completed.`,
+      CANCELLED: `Your booking for "${booking.serviceId.name}" has been cancelled.`,
+    };
+    const notifMessage = statusMessages[status];
+    if (notifMessage) {
+      await Notification.create({
+        userId: booking.userId._id,
+        societyId: req.societyId,
+        type: "SERVICE",
+        message: notifMessage,
+        metadata: { bookingId: booking._id },
+      });
+    }
+
     return successResponse(res, 200, "Booking status updated.", { booking });
   } catch (error) {
     next(error);
