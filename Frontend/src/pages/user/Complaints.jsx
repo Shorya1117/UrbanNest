@@ -8,7 +8,11 @@ import toast from "react-hot-toast";
 import { complaintAPI } from "../../api/services";
 import { PageLayout, PageHeader } from "../../components/layout";
 import { Button, Badge, Spinner, EmptyState, Modal, Input, Textarea } from "../../components/ui";
-
+const STATUS_CONFIG = {
+  PENDING:     { icon: Clock },
+  IN_PROGRESS: { icon: Wrench },
+  RESOLVED:    { icon: CheckCircle },
+};
 function ComplaintCard({ complaint }) {
   const [open, setOpen] = useState(false);
   const cfg = STATUS_CONFIG[complaint.status] || STATUS_CONFIG.PENDING;
@@ -249,7 +253,7 @@ export default function Complaints() {
       const params = {};
       if (status) params.status = status;
       const res = await complaintAPI.getAll(params);
-      setComplaints(res.data.data.complaints);
+      setComplaints(res.data.data.complaints|| []);
     } catch { } finally { setLoading(false); }
   }, [status]);
 
@@ -267,7 +271,7 @@ export default function Complaints() {
 
       {/* Status tabs */}
       <div className="flex gap-2 mb-6 flex-wrap">
-        {statusTabs.map((s) => (
+        {tabs.map((s) => (
           <button key={s} onClick={() => setStatus(s)}
             className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${status === s ? "bg-primary text-white" : "bg-white text-gray-600 border border-gray-200 hover:border-primary hover:text-primary"}`}>
             {s || "All"}
